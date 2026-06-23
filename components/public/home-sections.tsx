@@ -14,6 +14,7 @@ import {
   site,
 } from "@/lib/content";
 import { Arrow, Button, Container, Kicker, Section, SectionHeading } from "@/components/public/ui";
+import { Journey } from "@/components/public/journey/journey";
 
 /* ---------------------------------------------------------------- Hero */
 function Hero() {
@@ -388,6 +389,7 @@ export function HomeSections() {
     <>
       <Hero />
       <TrustStrip />
+      <Journey />
       <Services />
       <Flagship />
       <PrecisionProof />

@@ -139,6 +139,18 @@
     animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  /* Scroll-cinematic progressive enhancement toggle (spec 29).
+     Canvas/loop experience is hidden until the client enhancer activates it. */
+  .journey-canvas {
+    display: none;
+  }
+  [data-journey="enhanced"] .journey-static {
+    display: none;
+  }
+  [data-journey="enhanced"] .journey-canvas {
+    display: block;
+  }
+
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: translateY(0); }
