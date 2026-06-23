@@ -30,8 +30,8 @@ Mester_Proiect_simion/
 │       ├── security-reviewer.md
 │       └── seo-reviewer.md
 ├── docs/
-│   ├── specs/                      # fișierele 00–28 + CLAUDE.md ale pachetului
-│   │   └── references/             # MASTER_PROMPT (brief) și deep-research-report.md
+│   ├── specs/                      # fișierele 00–28 ale pachetului
+│   ├── research/                   # MASTER_PROMPT (brief) și deep-research-report.md
 │   └── work/
 │       ├── STATUS.md
 │       ├── DECISIONS.md
@@ -46,7 +46,7 @@ Mester_Proiect_simion/
 
 1. Păstrează `CLAUDE.md` la rădăcina proiectului.
 2. Mută fișierele numerotate `00-README.md`–`28-MASTER-IMPLEMENTATION-PLAN.md` în `docs/specs/`.
-3. Mută brief-ul inițial și raportul de research în `docs/specs/references/`.
+3. Mută brief-ul inițial și raportul de research în `docs/research/`.
 4. Copiază directorul `.claude/` din acest pachet la rădăcina proiectului.
 5. Copiază `docs/work/` din acest pachet.
 6. Adaugă liniile din `.gitignore.additions` în `.gitignore`.
