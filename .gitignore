@@ -6,11 +6,21 @@ vendor/
 dist/
 build/
 out/
+.next/
 
 # Environment / secrets
 .env
-.env.local
+.env.*
+!.env.example
 *.log
+secrets/
+
+# Claude local-only configuration
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Local Claude/Cowork temporary outputs
+.cowork-temp/
 
 # OS / editor
 .DS_Store
