@@ -57,6 +57,8 @@ Platforma este o **mașină de încredere și conversie** pentru o întreprinder
 | `26-OWNER-DISCOVERY-CHECKLIST.md` | întrebări și inventar necesar de la proprietar |
 | `27-SOURCE-REGISTER.md` | surse și reguli de utilizare a research-ului |
 | `28-MASTER-IMPLEMENTATION-PLAN.md` | ordine exactă de execuție pentru Claude |
+| `29-SCROLL-CINEMATIC-EXPERIENCE.md` | experiență scroll-cinematic „Parcursul Renovării" + master prompt |
+| `29-SCROLL-CINEMATIC-EXPERIENCE.md` | scrollytelling „apartament placat” (image-sequence) + prețuri per cameră |
 
 ## Ordinea recomandată de citire
 
