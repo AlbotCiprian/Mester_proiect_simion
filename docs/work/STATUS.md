@@ -14,6 +14,7 @@ Architecture approved; implementation not started.
 - Modular specification package
 - Claude Cowork and Claude Code operating model
 - Milestone 0 — repository scaffolding and configuration hardening
+- Frontend design prototype — "Precision Atelier" homepage (Workstream 1–2, placeholder content)
 
 ## Blockers
 
@@ -29,3 +30,4 @@ Architecture approved; implementation not started.
 | Date | Milestone | Result | Evidence | Approved by |
 |---|---|---|---|---|
 | 2026-06-23 | Milestone 0 — config & scaffolding | Done | local commit `chore: milestone 0` | owner |
+| 2026-06-24 | Frontend prototype (WS 1–2) | Build green (6/6 static), dev verified | `next build` ok; `/ro` 200, `/`→`/ro` 307, `/ru` notice | owner |

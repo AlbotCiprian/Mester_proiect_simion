@@ -1,0 +1,100 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { nav, site } from "@/lib/content";
+import { localeLabels, locales, type Locale } from "@/lib/i18n";
+import { Button } from "@/components/public/ui";
+
+export function SiteHeader({ locale }: { locale: Locale }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-line/80 bg-canvas/85 backdrop-blur supports-[backdrop-filter]:bg-canvas/70">
+      <div className="mx-auto flex max-w-[78rem] items-center justify-between gap-6 px-5 py-4 sm:px-8 lg:px-10">
+        <Link href={`/${locale}`} className="group flex items-baseline gap-2" aria-label={site.name}>
+          <span className="font-display text-xl font-semibold tracking-tight text-ink">{site.name}</span>
+          <span className="hidden text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-bronze-deep sm:inline">
+            Atelier
+          </span>
+        </Link>
+
+        <nav className="hidden items-center gap-7 lg:flex" aria-label="Navigație principală">
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-sm font-medium text-ink-soft transition-colors hover:text-ink"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-1 text-xs sm:flex" aria-label="Limbă">
+            {locales.map((l) => (
+              <Link
+                key={l}
+                href={`/${l}`}
+                aria-current={l === locale ? "true" : undefined}
+                className={`rounded-xs px-2 py-1 font-semibold uppercase tracking-wide transition-colors ${
+                  l === locale ? "bg-ink text-canvas" : "text-muted hover:text-ink"
+                }`}
+                title={localeLabels[l]}
+              >
+                {l}
+              </Link>
+            ))}
+          </div>
+
+          <div className="hidden sm:block">
+            <Button href="#contact" variant="bronze">
+              Cere o estimare
+            </Button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            aria-label={open ? "Închide meniul" : "Deschide meniul"}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xs border border-line-strong text-ink lg:hidden"
+          >
+            <span className="sr-only">Meniu</span>
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+              {open ? (
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              ) : (
+                <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
+              )}
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {open ? (
+        <div id="mobile-menu" className="border-t border-line bg-canvas-raised lg:hidden">
+          <nav className="mx-auto flex max-w-[78rem] flex-col px-5 py-3 sm:px-8" aria-label="Navigație mobilă">
+            {nav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="border-b border-line/70 py-3 text-base font-medium text-ink-soft last:border-0"
+              >
+                {item.label}
+              </Link>
+            ))}
+            <div className="mt-3 pb-2">
+              <Button href="#contact" variant="bronze" className="w-full">
+                Cere o estimare
+              </Button>
+            </div>
+          </nav>
+        </div>
+      ) : null}
+    </header>
+  );
+}
