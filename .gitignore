@@ -27,3 +27,6 @@ CLAUDE.local.md
 Thumbs.db
 .vscode/
 .idea/
+
+# TS incremental build info
+*.tsbuildinfo
