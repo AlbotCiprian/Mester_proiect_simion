@@ -11,7 +11,6 @@ export function track(event: string, props: EventProps = {}): void {
   if (Array.isArray(w.dataLayer)) w.dataLayer.push({ event, ...props });
   if (typeof w.gtag === "function") w.gtag("event", event, props);
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
     console.debug("[analytics]", event, props);
   }
 }

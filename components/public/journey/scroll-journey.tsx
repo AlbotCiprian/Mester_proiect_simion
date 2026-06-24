@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { baie } from "@/lib/journey";
 import { track } from "@/lib/analytics";
+import { detectCapability, journeyMode } from "@/lib/capability";
 
 type Mode = "idle" | "scrub" | "loop";
 
@@ -21,21 +22,13 @@ export default function ScrollJourney() {
   const framesRef = useRef<HTMLImageElement[]>([]);
   const animRef = useRef({ target: 0, current: 0, drawn: -1, raf: 0 });
 
-  // 1) Tier detection — decide whether/how to enhance (spec 29 §5).
+  // 1) Tier detection via the shared capability module (spec 29 §9).
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection;
-    if (mq.matches || conn?.saveData === true) return; // stay on static fallback
-
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    const mem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
-    const lowMem = typeof mem === "number" && mem <= 4;
-    const chosen: Mode = coarse || lowMem ? "loop" : "scrub";
-
+    const chosen = journeyMode(detectCapability());
+    if (chosen === "static") return; // stay on static fallback
     setMode(chosen);
     document.getElementById(rootId)?.setAttribute("data-journey", "enhanced");
     track("journey_start", { device_tier: chosen, chapter_id: baie.id });
-
     return () => document.getElementById(rootId)?.removeAttribute("data-journey");
   }, []);
 
@@ -98,14 +91,14 @@ export default function ScrollJourney() {
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
     onScroll();
-    animRef.current.raf = requestAnimationFrame(loop);
+    const anim = animRef.current;
+    anim.raf = requestAnimationFrame(loop);
 
     return () => {
-      cancelAnimationFrame(animRef.current.raf);
+      cancelAnimationFrame(anim.raf);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
   // 3) Loop video: play only while in view (battery/perf).

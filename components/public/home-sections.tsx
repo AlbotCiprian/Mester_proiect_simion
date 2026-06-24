@@ -3,7 +3,6 @@ import {
   estimator,
   faqs,
   flagship,
-  hero,
   portfolio,
   precisionPoints,
   processSteps,
@@ -11,54 +10,11 @@ import {
   services,
   trustFacts,
   channels,
-  site,
 } from "@/lib/content";
+import type { Locale } from "@/lib/i18n";
 import { Arrow, Button, Container, Kicker, Section, SectionHeading } from "@/components/public/ui";
 import { Journey } from "@/components/public/journey/journey";
-
-/* ---------------------------------------------------------------- Hero */
-function Hero() {
-  return (
-    <section className="relative overflow-hidden bg-canvas">
-      <div className="tile-grid tile-grid-fade pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
-      <Container className="relative grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:py-28">
-        <div className="fade-up">
-          <Kicker>{hero.kicker}</Kicker>
-          <h1 className="mt-6 text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">{hero.headline}</h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-soft">{hero.subhead}</p>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <Button href={hero.primaryCta.href} variant="bronze">
-              {hero.primaryCta.label} <Arrow />
-            </Button>
-            <Button href={hero.secondaryCta.href} variant="secondary">
-              {hero.secondaryCta.label}
-            </Button>
-          </div>
-          <p className="mt-7 text-sm text-muted">
-            {site.serviceArea} · răspuns rapid la cereri{" "}
-            <span className="text-bronze-deep">(CONFIRM_OWNER)</span>
-          </p>
-        </div>
-
-        <div className="fade-up">
-          <figure className="relative">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-sm border border-line-strong">
-              <Image
-                src={hero.image}
-                alt={hero.imageAlt}
-                fill
-                priority
-                sizes="(min-width:1024px) 45vw, 100vw"
-                className="object-cover"
-              />
-            </div>
-            <figcaption className="mt-2 text-right text-xs text-muted">Imagine demonstrativă · open-source</figcaption>
-          </figure>
-        </div>
-      </Container>
-    </section>
-  );
-}
+import { CinematicHero } from "@/components/public/hero/cinematic-hero";
 
 /* -------------------------------------------------------- Trust strip */
 function TrustStrip() {
@@ -384,14 +340,14 @@ function FinalCta() {
   );
 }
 
-export function HomeSections() {
+export function HomeSections({ locale }: { locale: Locale }) {
   return (
     <>
-      <Hero />
+      <CinematicHero locale={locale} />
       <TrustStrip />
-      <Journey />
       <Services />
       <Flagship />
+      <Journey />
       <PrecisionProof />
       <Process />
       <EstimatorTeaser />

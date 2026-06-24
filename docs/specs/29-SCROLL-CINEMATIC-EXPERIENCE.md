@@ -1,3 +1,8 @@
+> ⚠️ **SUPERSEDED PENTRU P0.** Abordarea hero din P0 este acum **full-window video**, definită în
+> documentul unic și final [`29-SCROLL-CINEMATIC-EXPERIENCE-REVISED-FULL-WINDOW-VIDEO.md`](../../29-SCROLL-CINEMATIC-EXPERIENCE-REVISED-FULL-WINDOW-VIDEO.md).
+> Conținutul de mai jos (image-sequence / scroll-driven „Parcursul Renovării") rămâne ca **referință** pentru
+> secțiunea de dovadă **demotată** (mai jos în pagină, nu hero) și pentru o fază viitoare. Nu îl folosi ca hero P0.
+
 # 29 — Scroll Cinematic „Parcursul Renovării" (Master Prompt)
 
 > **Status:** Proposed — necesită aprobarea proprietarului (Gate B — UX readiness).

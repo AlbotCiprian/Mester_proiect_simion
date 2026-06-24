@@ -14,7 +14,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     return <ComingSoon />;
   }
 
-  return <HomeSections />;
+  return <HomeSections locale={locale} />;
 }
 
 function ComingSoon() {

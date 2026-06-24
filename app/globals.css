@@ -156,3 +156,12 @@
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+/* Solid header stays fully opaque when the user prefers reduced transparency (spec 29 §4). */
+@media (prefers-reduced-transparency: reduce) {
+  .site-header--solid {
+    background-color: var(--color-canvas);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

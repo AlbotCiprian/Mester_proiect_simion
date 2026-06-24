@@ -21,8 +21,13 @@ export default async function PublicLayout({
 
   return (
     <>
-      <PreviewNotice />
-      <SiteHeader locale={locale as Locale} />
+      {/* Fixed top stack so the cinematic hero can sit full-bleed behind a
+          transparent header (spec 29 §4). Pages without a hero keep their own
+          top padding so content is not hidden under it. */}
+      <div className="fixed inset-x-0 top-0 z-50">
+        <PreviewNotice />
+        <SiteHeader locale={locale as Locale} />
+      </div>
       <main>{children}</main>
       <SiteFooter />
       <StickyContactBar />
