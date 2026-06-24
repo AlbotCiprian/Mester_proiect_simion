@@ -24,7 +24,7 @@ function TrustStrip() {
         <ul className="grid grid-cols-2 gap-y-8 sm:grid-cols-4 sm:divide-x sm:divide-line">
           {trustFacts.map((f) => (
             <li key={f.label} className="sm:px-6">
-              <p className="font-display text-3xl font-semibold text-ink sm:text-4xl">{f.value}</p>
+              <p className="font-display tabular text-3xl font-semibold text-ink sm:text-4xl">{f.value}</p>
               <p className="mt-1 text-sm text-muted">{f.label}</p>
             </li>
           ))}
@@ -59,7 +59,7 @@ function Services() {
               </div>
               <div className="mt-5 flex items-baseline gap-3">
                 <span className="font-display text-sm text-bronze-deep">0{i + 1}</span>
-                <h3 className="text-xl text-ink">{s.title}</h3>
+                <h3 className="text-display-3 text-ink">{s.title}</h3>
               </div>
               <p className="mt-3 text-[0.95rem] leading-relaxed text-muted">{s.summary}</p>
               <ul className="mt-4 space-y-1.5">
@@ -98,7 +98,7 @@ function Flagship() {
 
           <div>
             <Kicker>{flagship.kicker}</Kicker>
-            <h2 className="mt-5 text-3xl text-ink sm:text-4xl">{flagship.title}</h2>
+            <h2 className="mt-5 text-display-2 text-ink">{flagship.title}</h2>
             <p className="mt-2 text-sm text-muted">{flagship.location}</p>
             <p className="mt-5 text-base leading-relaxed text-ink-soft">{flagship.summary}</p>
 
@@ -120,7 +120,7 @@ function Flagship() {
             <ul className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
               {flagship.metrics.map((m) => (
                 <li key={m.label}>
-                  <p className="font-display text-2xl font-semibold text-ink">{m.value}</p>
+                  <p className="font-display tabular text-2xl font-semibold text-ink">{m.value}</p>
                   <p className="text-xs text-muted">{m.label}</p>
                 </li>
               ))}
@@ -148,7 +148,7 @@ function PrecisionProof() {
           {precisionPoints.map((p, i) => (
             <div key={p.title} className="border-t border-canvas/15 pt-5">
               <span className="font-display text-sm text-bronze-light">0{i + 1}</span>
-              <h3 className="mt-2 text-xl text-canvas">{p.title}</h3>
+              <h3 className="mt-2 text-display-3 text-canvas">{p.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-canvas/70">{p.body}</p>
             </div>
           ))}
@@ -172,7 +172,7 @@ function Process() {
           {processSteps.map((step) => (
             <li key={step.index} className="border-t border-line pt-5">
               <span className="font-display text-2xl font-semibold text-bronze-deep">{step.index}</span>
-              <h3 className="mt-2 text-lg text-ink">{step.title}</h3>
+              <h3 className="mt-2 text-display-3 text-ink">{step.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">{step.body}</p>
             </li>
           ))}
@@ -190,7 +190,7 @@ function EstimatorTeaser() {
         <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
             <Kicker>{estimator.kicker}</Kicker>
-            <h2 className="mt-5 text-3xl text-ink sm:text-4xl">{estimator.title}</h2>
+            <h2 className="mt-5 text-display-2 text-ink">{estimator.title}</h2>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-ink-soft">{estimator.body}</p>
             <div className="mt-8">
               <Button href={estimator.cta.href} variant="primary">
@@ -314,7 +314,7 @@ function FinalCta() {
       <Container className="relative py-20 sm:py-28">
         <div className="max-w-2xl">
           <Kicker>Contact</Kicker>
-          <h2 className="mt-5 text-3xl text-canvas sm:text-4xl lg:text-5xl">
+          <h2 className="mt-5 text-display-2 text-canvas">
             Spune-ne despre spațiul tău. Primești un interval și pașii următori.
           </h2>
           <p className="mt-5 text-base leading-relaxed text-canvas/75">

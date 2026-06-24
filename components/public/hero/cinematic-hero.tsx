@@ -54,15 +54,15 @@ export function CinematicHero({ locale }: { locale: Locale }) {
       {/* Scrim for legibility: vertical on mobile, horizontal on desktop. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 z-0 bg-gradient-to-t from-ink/85 via-ink/25 to-ink/40 lg:bg-gradient-to-r lg:from-ink/85 lg:via-ink/35 lg:to-transparent"
+        className="absolute inset-0 z-0 bg-gradient-to-t from-ink/90 via-ink/45 to-ink/50 lg:bg-gradient-to-r lg:from-ink/90 lg:via-ink/55 lg:to-ink/15"
       />
 
       <Container className="relative z-10 pb-24 pt-32 sm:pb-28 lg:py-40">
         <p className="kicker !text-bronze-light">{copy.eyebrow}</p>
-        <h1 id="hero-title" className="mt-5 max-w-3xl text-4xl text-canvas sm:text-5xl lg:text-6xl">
+        <h1 id="hero-title" className="mt-5 max-w-3xl text-display-1 text-canvas">
           {copy.title}
         </h1>
-        <p className="mt-5 max-w-xl text-base leading-relaxed text-canvas/85 sm:text-lg">
+        <p className="mt-6 max-w-xl text-lead text-canvas/90">
           {copy.description}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
@@ -79,10 +79,10 @@ export function CinematicHero({ locale }: { locale: Locale }) {
       {/* Scroll hint — real, focusable link (also accessible). */}
       <Link
         href="#servicii"
-        className="absolute inset-x-0 bottom-5 z-10 mx-auto flex w-fit items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-canvas/70 transition-colors hover:text-canvas"
+        className="absolute inset-x-0 bottom-3 z-10 mx-auto flex w-fit items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-canvas/80 transition-colors hover:text-canvas"
       >
         {copy.scrollHint}
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+        <svg viewBox="0 0 16 16" className="scroll-hint-bob h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
           <path d="M8 3v9M4 8.5l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </Link>

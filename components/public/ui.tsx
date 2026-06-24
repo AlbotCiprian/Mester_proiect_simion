@@ -64,12 +64,12 @@ export function SectionHeading({
   tone?: "dark" | "light";
 }) {
   const titleColor = tone === "light" ? "text-canvas" : "text-ink";
-  const introColor = tone === "light" ? "text-canvas/75" : "text-muted";
+  const introColor = tone === "light" ? "text-canvas/80" : "text-ink-soft";
   return (
     <div className={`max-w-2xl ${align === "center" ? "mx-auto text-center" : ""}`}>
       {kicker ? <Kicker>{kicker}</Kicker> : null}
-      <h2 className={`mt-5 text-3xl sm:text-4xl lg:text-[2.75rem] ${titleColor}`}>{title}</h2>
-      {intro ? <p className={`mt-5 text-base sm:text-lg leading-relaxed ${introColor}`}>{intro}</p> : null}
+      <h2 className={`mt-5 text-display-2 ${titleColor}`}>{title}</h2>
+      {intro ? <p className={`mt-5 text-lead ${introColor}`}>{intro}</p> : null}
     </div>
   );
 }
@@ -82,7 +82,7 @@ const variantClass: Record<ButtonVariant, string> = {
   secondary:
     "bg-transparent text-ink border border-line-strong hover:border-ink hover:bg-canvas-raised",
   bronze:
-    "bg-bronze text-canvas-raised hover:bg-bronze-deep border border-bronze",
+    "bg-bronze-deep text-canvas-raised hover:bg-bronze border border-bronze-deep",
   "ghost-light":
     "bg-transparent text-canvas border border-canvas/35 hover:border-canvas hover:bg-canvas/10",
 };
@@ -101,7 +101,7 @@ export function Button({
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 rounded-xs px-6 py-3 text-sm font-semibold tracking-wide transition-colors duration-200 ${variantClass[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xs px-6 py-3.5 text-sm font-semibold tracking-wide transition-[color,background-color,border-color] duration-200 active:translate-y-px ${variantClass[variant]} ${className}`}
     >
       {children}
     </Link>

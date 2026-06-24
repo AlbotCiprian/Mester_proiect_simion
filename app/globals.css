@@ -28,8 +28,21 @@
   --color-terracotta: #b15a37;
 
   /* Editorial type scale helpers */
-  --font-display: var(--font-playfair), ui-serif, Georgia, "Times New Roman", serif;
+  --font-display: var(--font-serif), ui-serif, Georgia, "Times New Roman", serif;
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Fluid editorial type scale (clamp: mobile → desktop) */
+  --text-display-1: clamp(2.5rem, 1.55rem + 4.1vw, 4.25rem);
+  --text-display-1--line-height: 1.03;
+  --text-display-1--letter-spacing: -0.022em;
+  --text-display-2: clamp(1.95rem, 1.3rem + 2.6vw, 3rem);
+  --text-display-2--line-height: 1.07;
+  --text-display-2--letter-spacing: -0.018em;
+  --text-display-3: clamp(1.4rem, 1.12rem + 1.1vw, 1.85rem);
+  --text-display-3--line-height: 1.16;
+  --text-display-3--letter-spacing: -0.005em;
+  --text-lead: clamp(1.05rem, 0.99rem + 0.3vw, 1.2rem);
+  --text-lead--line-height: 1.6;
 
   /* Radii — firm, not pill */
   --radius-xs: 2px;
@@ -60,6 +73,9 @@
     color: var(--color-ink-soft);
     font-family: var(--font-sans);
     font-synthesis-weight: none;
+    font-feature-settings: "kern", "liga", "calt";
+    line-height: 1.65;
+    letter-spacing: -0.001em;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -68,11 +84,15 @@
   h1, h2, h3, h4 {
     color: var(--color-ink);
     font-family: var(--font-display);
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    line-height: 1.05;
+    font-weight: 600;
+    font-optical-sizing: auto;
+    font-feature-settings: "kern", "liga";
+    letter-spacing: -0.012em;
+    line-height: 1.06;
     text-wrap: balance;
   }
+
+  strong, b { font-weight: 600; }
 
   p { text-wrap: pretty; }
 
@@ -137,6 +157,21 @@
 
   .fade-up {
     animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Tabular, lining numerals for stats, metrics and prices */
+  .tabular {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum", "lnum";
+  }
+
+  /* Gentle scroll cue (auto-disabled under reduced-motion by the global reset). */
+  .scroll-hint-bob {
+    animation: scroll-bob 2.4s ease-in-out infinite;
+  }
+  @keyframes scroll-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
   }
 
   /* Scroll-cinematic progressive enhancement toggle (spec 29).
