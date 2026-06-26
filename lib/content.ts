@@ -36,13 +36,20 @@ export interface ProcessStep {
   body: string;
 }
 
+export type ProjectCategory = "Baie" | "Interior" | "Exterior" | "Proces" | "Comercial";
+
 export interface PortfolioItem {
   slug: string;
   title: string;
   type: string;
-  location: string;
+  category: ProjectCategory;
   image: string;
   imageAlt: string;
+  /** Larger, story-first tile rendered as a before/after pair. */
+  featured?: boolean;
+  /** Optional "before" frame for a before/after comparison. */
+  before?: string;
+  beforeAlt?: string;
 }
 
 export interface Review {
@@ -113,9 +120,8 @@ export const services: Service[] = [
     summary:
       "Placare precisă pe pereți și pardoseli, cu pregătirea corectă a suportului și rosturi calibrate.",
     bullets: ["Nivel laser și suport plan", "Tăieturi și colțuri la 45°", "Rosturi uniforme, etanșe"],
-    image:
-      "https://images.unsplash.com/photo-1556909212-d5b604d0c90d?auto=format&fit=crop&w=1200&q=80",
-    imageAlt: "Detaliu de faianță montată pe perete (imagine demonstrativă)",
+    image: "/images/portfolio/poza7.jpg",
+    imageAlt: "Placare pereți și pardoseală în execuție, cu sistem de nivelare.",
   },
   {
     slug: "renovari-bai",
@@ -123,9 +129,8 @@ export const services: Service[] = [
     summary:
       "Coordonăm tot procesul — de la demontare și hidroizolație până la finisaje și montaj sanitar.",
     bullets: ["Hidroizolație în zonele umede", "Trasee apă și canalizare", "Finisaje și montaj obiecte"],
-    image:
-      "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1200&q=80",
-    imageAlt: "Baie renovată complet, vedere de ansamblu (imagine demonstrativă)",
+    image: "/images/portfolio/poza6.jpg",
+    imageAlt: "Baie finalizată: duș placat cu gresie bej și rigolă liniară.",
   },
   {
     slug: "teracota-sobe",
@@ -133,9 +138,8 @@ export const services: Service[] = [
     summary:
       "Lucrări de teracotă și placări ceramice decorative, cu atenție la tipar, ton și aliniere.",
     bullets: ["Selectarea tiparului", "Aliniere pe module", "Detalii de racord curate"],
-    image:
-      "https://images.unsplash.com/photo-1615875605825-5eb9bb5d52ac?auto=format&fit=crop&w=1200&q=80",
-    imageAlt: "Plăci ceramice cu textură caldă (imagine demonstrativă)",
+    image: "/images/portfolio/poza3.jpg",
+    imageAlt: "Placare ceramică cu textură caldă, rost diagonal pe pardoseală.",
   },
   {
     slug: "placari-exterioare",
@@ -143,23 +147,22 @@ export const services: Service[] = [
     summary:
       "Placări rezistente la îngheț pentru terase, scări și fațade, cu pante și rosturi tehnice corecte.",
     bullets: ["Adezivi pentru exterior", "Pante de scurgere", "Rosturi de dilatare"],
-    image:
-      "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80",
-    imageAlt: "Terasă placată cu gresie de exterior (imagine demonstrativă)",
+    image: "/images/portfolio/poza1.jpg",
+    imageAlt: "Fațadă și scară exterioară placate cu plăci porțelanate format mare.",
   },
 ];
 
 export const flagship = {
   kicker: "Proiect reprezentativ",
   // CONFIRM_OWNER: real project, media and right to publish (checklist D).
-  title: "Baie cu travertin și nișă iluminată",
-  location: "Chișinău (exemplu)",
+  title: "Baie placată cu travertin, format mare",
+  location: "Proiect real · locație de confirmat",
   summary:
-    "O baie de familie regândită complet: format mare de placare, nișă integrată și rosturi continue pe trei planuri.",
+    "O baie placată cu gresie bej de format mare, cu rost continuu pe pardoseală și duș cu rigolă liniară.",
   challenge:
-    "Pereți neregulați și un calandru de instalații care complica alinierea plăcilor de format mare.",
+    "Pereți neregulați și un traseu de instalații care complica alinierea plăcilor de format mare.",
   approach:
-    "Am corectat planul suportului, am pretrasat fiecare rând și am poziționat nișa pe modul, păstrând rostul continuu.",
+    "Am corectat planul suportului, am pretrasat fiecare rând și am păstrat rostul continuu între pereți și pardoseală.",
   result:
     "O suprafață citită ca un singur material, cu racorduri curate și întreținere ușoară.",
   metrics: [
@@ -167,9 +170,8 @@ export const flagship = {
     { value: "12 zile", label: "durată execuție", confirm: CONFIRM },
     { value: "120×60", label: "format plăci (cm)", confirm: CONFIRM },
   ],
-  image:
-    "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=1600&q=80",
-  imageAlt: "Baie placată cu travertin și nișă iluminată (imagine demonstrativă)",
+  image: "/images/portfolio/poza3.jpg",
+  imageAlt: "Baie placată cu gresie bej travertin, duș cu rigolă liniară.",
 };
 
 export const precisionPoints = [
@@ -209,38 +211,84 @@ export const estimator = {
   note: "Estimatorul nu este o ofertă contractuală (ADR-012).",
 };
 
+// Real project photos supplied by the owner (docs/poze → public/images/portfolio).
+// Right to publish is implied by the owner providing them; project metadata
+// (locality, surface, date) remains CONFIRM_OWNER until verified.
 export const portfolio: PortfolioItem[] = [
   {
-    slug: "baie-travertin",
-    title: "Baie cu travertin",
-    type: "Renovare baie",
-    location: "Chișinău (exemplu)",
-    image: "https://images.unsplash.com/photo-1604709177225-055f99402ea3?auto=format&fit=crop&w=1000&q=80",
-    imageAlt: "Baie placată în tonuri calde (imagine demonstrativă)",
+    slug: "renovare-baie-inainte-dupa",
+    title: "Renovare baie — de la suport la finisaj",
+    type: "Hidroizolație · placare duș · rigolă liniară",
+    category: "Baie",
+    featured: true,
+    before: "/images/portfolio/poza5.jpg",
+    beforeAlt: "Baie înainte de placare: pereți pregătiți și instalații montate.",
+    image: "/images/portfolio/poza6.jpg",
+    imageAlt: "Baie după placare: gresie bej de format mare și duș cu rigolă liniară.",
   },
   {
-    slug: "bucatarie-faianta",
-    title: "Faianță bucătărie",
-    type: "Montaj faianță",
-    location: "Chișinău (exemplu)",
-    image: "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1000&q=80",
-    imageAlt: "Faianță montată pe peretele bucătăriei (imagine demonstrativă)",
+    slug: "dus-travertin",
+    title: "Duș placat cu rigolă liniară",
+    type: "Placare baie · gresie bej",
+    category: "Baie",
+    image: "/images/portfolio/poza3.jpg",
+    imageAlt: "Cabină de duș placată cu gresie bej travertin și rost diagonal pe pardoseală.",
   },
   {
-    slug: "dus-format-mare",
-    title: "Duș format mare",
-    type: "Placare gresie",
-    location: "Chișinău (exemplu)",
-    image: "https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=1000&q=80",
-    imageAlt: "Cabină de duș placată cu plăci de format mare (imagine demonstrativă)",
+    slug: "living-marmura",
+    title: "Living cu gresie aspect marmură",
+    type: "Pardoseală format mare",
+    category: "Interior",
+    image: "/images/portfolio/poza8.jpg",
+    imageAlt: "Living amplu cu pardoseală din gresie aspect marmură albă, lucioasă.",
   },
   {
-    slug: "terasa-exterior",
-    title: "Terasă exterioară",
-    type: "Placare exterior",
-    location: "Chișinău (exemplu)",
-    image: "https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&w=1000&q=80",
-    imageAlt: "Terasă placată cu gresie de exterior (imagine demonstrativă)",
+    slug: "fatada-scara-exterior",
+    title: "Fațadă și scară exterioară",
+    type: "Placare exterioară · porțelan format mare",
+    category: "Exterior",
+    image: "/images/portfolio/poza1.jpg",
+    imageAlt: "Fațadă și scară exterioară placate cu plăci porțelanate gri de format mare.",
+  },
+  {
+    slug: "placare-nivelare",
+    title: "Placare pereți cu sistem de nivelare",
+    type: "În execuție · gresie travertin",
+    category: "Proces",
+    image: "/images/portfolio/poza7.jpg",
+    imageAlt: "Placare pereți și pardoseală în execuție, cu clipsuri de nivelare.",
+  },
+  {
+    slug: "spatiu-tehnic-gri",
+    title: "Spațiu tehnic placat integral",
+    type: "Pereți și pardoseală · gresie gri marmorată",
+    category: "Comercial",
+    image: "/images/portfolio/poza9.jpg",
+    imageAlt: "Spațiu tehnic placat complet cu gresie gri marmorată și rigolă de scurgere.",
+  },
+  {
+    slug: "garaj-gresie",
+    title: "Garaj cu gresie gri marmorată",
+    type: "Placare pereți și pardoseală",
+    category: "Comercial",
+    image: "/images/portfolio/poza10.jpg",
+    imageAlt: "Garaj placat cu gresie gri marmorată, vedere spre ușa secțională.",
+  },
+  {
+    slug: "scara-exterioara-executie",
+    title: "Scară exterioară în execuție",
+    type: "Proces · trepte și terasă",
+    category: "Proces",
+    image: "/images/portfolio/poza2.jpg",
+    imageAlt: "Scară exterioară în curs de placare, cu clipsuri de nivelare pe terasă.",
+  },
+  {
+    slug: "hidroizolatie-zona-umeda",
+    title: "Hidroizolație în zona de duș",
+    type: "Proces · pregătire zonă umedă",
+    category: "Proces",
+    image: "/images/portfolio/poza4.jpg",
+    imageAlt: "Hidroizolație aplicată în zona de duș, înainte de placare.",
   },
 ];
 

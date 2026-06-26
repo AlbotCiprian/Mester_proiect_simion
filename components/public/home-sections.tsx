@@ -47,7 +47,7 @@ function Services() {
         />
         <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2">
           {services.map((s, i) => (
-            <article key={s.slug} className="group">
+            <article key={s.slug} className="group transition-transform duration-300 hover:-translate-y-1">
               <div className="relative aspect-[16/10] overflow-hidden rounded-sm border border-line">
                 <Image
                   src={s.image}
@@ -59,7 +59,7 @@ function Services() {
               </div>
               <div className="mt-5 flex items-baseline gap-3">
                 <span className="font-display text-sm text-bronze-deep">0{i + 1}</span>
-                <h3 className="text-display-3 text-ink">{s.title}</h3>
+                <h3 className="text-display-3 text-ink transition-colors group-hover:text-bronze-deep">{s.title}</h3>
               </div>
               <p className="mt-3 text-[0.95rem] leading-relaxed text-muted">{s.summary}</p>
               <ul className="mt-4 space-y-1.5">
@@ -219,30 +219,86 @@ function EstimatorTeaser() {
 
 /* ---------------------------------------------------------- Portfolio */
 function Portfolio() {
+  const featured = portfolio.find((p) => p.featured);
+  const gallery = portfolio.filter((p) => !p.featured);
+
   return (
     <Section id="proiecte" tone="canvas" divide>
       <Container>
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <SectionHeading kicker="Portofoliu" title="Lucrări selectate" />
-          <Button href="#contact" variant="secondary">
-            Cere un proiect similar
-          </Button>
-        </div>
-        <div className="mt-12 grid gap-6 sm:grid-cols-2">
-          {portfolio.map((p) => (
-            <article key={p.slug} className="group relative overflow-hidden rounded-sm border border-line">
-              <div className="relative aspect-[5/4] overflow-hidden">
+        <SectionHeading
+          kicker="Portofoliu"
+          title="Lucrări reale ale atelierului"
+          intro="Proiecte fotografiate la fața locului — de la pregătire și hidroizolație până la finisaj."
+        />
+        <p className="mt-4 text-xs text-bronze-deep">
+          Detaliile fiecărui proiect (locație, suprafață, dată) se confirmă cu proprietarul (CONFIRM_OWNER).
+        </p>
+
+        {/* Featured before/after — the strongest proof story, accessible side-by-side. */}
+        {featured && featured.before && featured.beforeAlt ? (
+          <article className="mt-12 overflow-hidden rounded-sm border border-line-strong bg-canvas-raised">
+            <div className="grid sm:grid-cols-2">
+              <figure className="relative aspect-[4/3] sm:aspect-[4/5]">
+                <Image
+                  src={featured.before}
+                  alt={featured.beforeAlt}
+                  fill
+                  sizes="(min-width:640px) 42vw, 100vw"
+                  className="object-cover"
+                />
+                <figcaption className="absolute left-4 top-4 rounded-xs bg-ink/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-canvas">
+                  Înainte
+                </figcaption>
+              </figure>
+              <figure className="relative aspect-[4/3] border-t border-line sm:aspect-[4/5] sm:border-l sm:border-t-0">
+                <Image
+                  src={featured.image}
+                  alt={featured.imageAlt}
+                  fill
+                  sizes="(min-width:640px) 42vw, 100vw"
+                  className="object-cover"
+                />
+                <figcaption className="absolute left-4 top-4 rounded-xs bg-bronze px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-canvas-raised">
+                  După
+                </figcaption>
+              </figure>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line p-6 sm:p-7">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-bronze-deep">
+                  {featured.category} · Înainte → După
+                </span>
+                <h3 className="mt-1 text-display-3 text-ink">{featured.title}</h3>
+                <p className="mt-1 text-sm text-muted">{featured.type}</p>
+              </div>
+              <Button href="#contact" variant="primary">
+                Cere un proiect similar <Arrow />
+              </Button>
+            </div>
+          </article>
+        ) : null}
+
+        {/* Editorial gallery grid. */}
+        <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
+          {gallery.map((p) => (
+            <article
+              key={p.slug}
+              className="group relative overflow-hidden rounded-sm border border-line transition-colors hover:border-line-strong"
+            >
+              <div className="relative aspect-[3/4] overflow-hidden">
                 <Image
                   src={p.image}
                   alt={p.imageAlt}
                   fill
-                  sizes="(min-width:640px) 45vw, 100vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                  sizes="(min-width:1024px) 30vw, (min-width:640px) 45vw, 50vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                 />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/80 to-transparent p-5">
-                  <p className="text-xs uppercase tracking-wide text-canvas/70">{p.type}</p>
-                  <p className="font-display text-xl text-canvas">{p.title}</p>
-                  <p className="text-xs text-canvas/70">{p.location}</p>
+                <span className="absolute left-3 top-3 rounded-xs bg-canvas/90 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-ink">
+                  {p.category}
+                </span>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent p-4">
+                  <p className="font-display text-base leading-tight text-canvas sm:text-lg">{p.title}</p>
+                  <p className="mt-0.5 text-[0.7rem] text-canvas/75">{p.type}</p>
                 </div>
               </div>
             </article>

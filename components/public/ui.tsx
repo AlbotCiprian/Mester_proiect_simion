@@ -69,7 +69,7 @@ export function SectionHeading({
     <div className={`max-w-2xl ${align === "center" ? "mx-auto text-center" : ""}`}>
       {kicker ? <Kicker>{kicker}</Kicker> : null}
       <h2 className={`mt-5 text-display-2 ${titleColor}`}>{title}</h2>
-      {intro ? <p className={`mt-5 text-lead ${introColor}`}>{intro}</p> : null}
+      {intro ? <p className={`mt-5 max-w-xl text-lead ${introColor}`}>{intro}</p> : null}
     </div>
   );
 }

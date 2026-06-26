@@ -96,6 +96,9 @@
 
   p { text-wrap: pretty; }
 
+  /* Offset in-page anchors so targets clear the fixed header (spec 29 §4). */
+  [id] { scroll-margin-top: 5.5rem; }
+
   ::selection {
     background-color: var(--color-bronze);
     color: var(--color-canvas-raised);
@@ -123,9 +126,9 @@
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
     color: var(--color-bronze-deep);
   }
