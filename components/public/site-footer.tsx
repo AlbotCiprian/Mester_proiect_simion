@@ -1,14 +1,14 @@
 import Link from "next/link";
-import { channels, nav, site } from "@/lib/content";
+import { publicChannels, nav, navHref, site } from "@/lib/content";
+import type { Locale } from "@/lib/i18n";
 import { Container } from "@/components/public/ui";
 
-const legal = [
-  { label: "Confidențialitate", href: "#" },
-  { label: "Cookies", href: "#" },
-  { label: "Termeni", href: "#" },
-];
+// Only pages that exist. "Cookies" is intentionally absent: the site sets no
+// cookies, so the page would only advertise a consent banner we do not need.
+// "Termeni" is blocked on the legal entity (checklist A4).
+const legal = [{ label: "Confidențialitate", path: "/confidentialitate" }];
 
-export function SiteFooter() {
+export function SiteFooter({ locale }: { locale: Locale }) {
   return (
     <footer className="bg-ink text-canvas">
       <Container className="py-16">
@@ -25,8 +25,11 @@ export function SiteFooter() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-canvas/50">Navigare</p>
             <ul className="mt-4 space-y-2.5">
               {nav.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="text-canvas/80 transition-colors hover:text-canvas">
+                <li key={item.hash}>
+                  <Link
+                    href={navHref(locale, item.hash)}
+                    className="text-canvas/80 transition-colors hover:text-canvas"
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -37,7 +40,7 @@ export function SiteFooter() {
           <div className="text-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-canvas/50">Contact</p>
             <ul className="mt-4 space-y-2.5">
-              {channels.map((c) => (
+              {publicChannels.map((c) => (
                 <li key={c.type}>
                   <Link href={c.href} className="text-canvas/80 transition-colors hover:text-canvas">
                     {c.label}
@@ -53,7 +56,7 @@ export function SiteFooter() {
           <ul className="flex flex-wrap gap-5">
             {legal.map((item) => (
               <li key={item.label}>
-                <Link href={item.href} className="transition-colors hover:text-canvas">
+                <Link href={`/${locale}${item.path}`} className="transition-colors hover:text-canvas">
                   {item.label}
                 </Link>
               </li>

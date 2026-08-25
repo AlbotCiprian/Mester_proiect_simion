@@ -15,10 +15,16 @@ export const CONFIRM = "CONFIRM_OWNER" as const;
 export type ConfirmFlag = typeof CONFIRM;
 
 export interface Channel {
-  type: "phone" | "viber" | "telegram" | "email";
+  type: "phone" | "whatsapp" | "viber" | "telegram" | "email";
   label: string;
   href: string;
-  confirm: ConfirmFlag;
+  /**
+   * Rendered publicly ONLY when true. An unconfirmed channel is a promise we
+   * cannot keep: a Viber button on a number that has no Viber loses the customer
+   * more effectively than having no button at all.
+   */
+  confirmed: boolean;
+  confirm?: ConfirmFlag;
 }
 
 export interface Service {
@@ -28,6 +34,10 @@ export interface Service {
   bullets: string[];
   image: string;
   imageAlt: string;
+  /** CSS object-position. Phone frames are 9:20; center-cropping beheads them. */
+  focal?: string;
+  /** Set when the photo does not literally depict this service (see teracotă). */
+  imageConfirm?: ConfirmFlag;
 }
 
 export interface ProcessStep {
@@ -36,7 +46,8 @@ export interface ProcessStep {
   body: string;
 }
 
-export type ProjectCategory = "Baie" | "Interior" | "Exterior" | "Proces" | "Comercial";
+// Only categories we can actually evidence with owner photography (D-008).
+export type ProjectCategory = "Baie" | "Proces" | "Exterior";
 
 export interface PortfolioItem {
   slug: string;
@@ -45,11 +56,15 @@ export interface PortfolioItem {
   category: ProjectCategory;
   image: string;
   imageAlt: string;
+  /** CSS object-position for `image`. */
+  focal?: string;
   /** Larger, story-first tile rendered as a before/after pair. */
   featured?: boolean;
   /** Optional "before" frame for a before/after comparison. */
   before?: string;
   beforeAlt?: string;
+  /** CSS object-position for `before`. */
+  beforeFocal?: string;
 }
 
 export interface Review {
@@ -64,55 +79,107 @@ export interface Faq {
   a: string;
 }
 
+/**
+ * GATE A — the content switch that lets the site be indexed.
+ *
+ * Flip to `true` ONLY when every one of these is answered and encoded below:
+ *   A1 brand name shown to customers        A4 legal entity for the privacy notice
+ *   B1 exact list of services               B2 teracotă/sobe: yes or no
+ *   B4 localities actually served           E1-E3 phone + which messengers exist
+ *   G1 written right to publish the project photographs
+ *
+ * A CONFIRM_OWNER comment does not stop a deploy; this boolean does. See
+ * lib/seo.ts (INDEXABLE) — nothing else gates indexing.
+ */
+export const GATE_A_COMPLETE = false;
+
 export const site = {
-  // CONFIRM_OWNER: legal + commercial name, domain, logo.
+  // CONFIRM_OWNER: brand name, legal entity and logo are still undecided.
+  // The owner will supply them; everything below is a working title only.
   name: "Atelier Teracota",
   shortName: "Atelier Teracota",
   tagline: "Placări și renovări de baie executate cu precizie",
-  // CONFIRM_OWNER: real coverage area.
+  // CONFIRM_OWNER: exact localities served.
   serviceArea: "Chișinău și împrejurimi",
   confirm: CONFIRM,
 };
 
+/**
+ * The one contact fact that is CONFIRMED (owner, 2026-08-19).
+ * E.164 for machines (tel:, JSON-LD), spaced for humans.
+ */
+export const phone = {
+  e164: "+37379968387",
+  display: "+373 79 968 387",
+} as const;
+
 export const channels: Channel[] = [
-  // CONFIRM_OWNER: every real contact channel and number.
-  { type: "phone", label: "+373 00 000 000", href: "tel:+37300000000", confirm: CONFIRM },
-  { type: "viber", label: "Viber", href: "#", confirm: CONFIRM },
-  { type: "telegram", label: "Telegram", href: "#", confirm: CONFIRM },
-  { type: "email", label: "contact@example.md", href: "mailto:contact@example.md", confirm: CONFIRM },
+  { type: "phone", label: phone.display, href: `tel:${phone.e164}`, confirmed: true },
+
+  // CONFIRM_OWNER: does this number actually have WhatsApp / Viber, and is there
+  // a Telegram username? Telegram cannot be linked by phone number at all — it
+  // needs an @username. Flip `confirmed` per channel once the owner answers.
+  {
+    type: "whatsapp",
+    label: "WhatsApp",
+    href: `https://wa.me/${phone.e164.replace("+", "")}`,
+    confirmed: false,
+    confirm: CONFIRM,
+  },
+  {
+    type: "viber",
+    label: "Viber",
+    href: `viber://chat?number=${encodeURIComponent(phone.e164)}`,
+    confirmed: false,
+    confirm: CONFIRM,
+  },
+  { type: "telegram", label: "Telegram", href: "#", confirmed: false, confirm: CONFIRM },
+  { type: "email", label: "E-mail", href: "#", confirmed: false, confirm: CONFIRM },
 ];
 
+/** Only channels safe to show a visitor. */
+export const publicChannels = channels.filter((c) => c.confirmed);
+
+/**
+ * Section anchors on the homepage. Rendered through `navHref(locale, hash)` so
+ * they work from any route — a bare "#servicii" resolves against whatever path
+ * the visitor is on, which turns every nav item into a dead link the moment a
+ * second route exists.
+ */
 export const nav = [
-  { label: "Servicii", href: "#servicii" },
-  { label: "Proiecte", href: "#proiecte" },
-  { label: "Proces", href: "#proces" },
-  { label: "Prețuri", href: "#preturi" },
-  { label: "Despre", href: "#despre" },
-  { label: "Contact", href: "#contact" },
+  { label: "Servicii", hash: "#servicii" },
+  { label: "Proiecte", hash: "#proiecte" },
+  { label: "Proces", hash: "#proces" },
+  { label: "Prețuri", hash: "#preturi" },
+  { label: "Despre", hash: "#despre" },
+  { label: "Contact", hash: "#contact" },
 ];
 
-export const hero = {
-  kicker: "Atelier de placări ceramice · Moldova",
-  // CONFIRM_OWNER: final headline / value proposition.
-  headline: "Suprafețe ceramice cu rost perfect, baie cu baie.",
-  subhead:
-    "Montaj de gresie, faianță și teracotă și renovări complete de baie, prezentate transparent prin proiecte reale și estimate rapid pe baza situației tale.",
-  primaryCta: { label: "Cere o estimare", href: "#contact" },
-  secondaryCta: { label: "Vezi proiectele", href: "#proiecte" },
-  image:
-    "https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=1920&q=80",
-  imageAlt:
-    "Baie modernă placată cu gresie de format mare și rosturi fine (imagine demonstrativă)",
-};
+export function navHref(locale: string, hash: string): string {
+  return `/${locale}${hash}`;
+}
 
-export const trustFacts = [
-  // CONFIRM_OWNER: every figure must be verifiable before publication.
-  { value: "10+", label: "ani de experiență", confirm: CONFIRM },
-  { value: "200+", label: "proiecte finalizate", confirm: CONFIRM },
-  { value: "24 luni", label: "garanție lucrări", confirm: CONFIRM },
-  { value: "Chișinău", label: "+ zone deservite", confirm: CONFIRM },
-];
+// NOTE: the old `hero` export (Unsplash stock photo) was removed. The homepage
+// hero is owned by lib/hero.ts, which renders owner media behind a rights gate.
 
+export interface TrustFact {
+  value: string;
+  label: string;
+}
+
+/**
+ * DATA-GATED, not comment-gated. A `CONFIRM_OWNER` comment does not stop a
+ * deploy; an empty array does — the strip simply does not render.
+ *
+ * Refill ONLY with figures the owner can evidence (checklist B7, B8, D1, B4).
+ * The previous values ("10+ ani", "200+ proiecte", "24 luni garanție") were
+ * placeholders that read as public promises. If a figure cannot be confirmed,
+ * the tile is deleted, never rounded.
+ */
+export const trustFacts: TrustFact[] = [];
+
+// Photos: owner-supplied, published from docs/poze via scripts/build-media.mjs.
+// `focal` values come from scripts/media-catalog.mjs — keep the two in sync.
 export const services: Service[] = [
   {
     slug: "gresie-faianta",
@@ -120,8 +187,10 @@ export const services: Service[] = [
     summary:
       "Placare precisă pe pereți și pardoseli, cu pregătirea corectă a suportului și rosturi calibrate.",
     bullets: ["Nivel laser și suport plan", "Tăieturi și colțuri la 45°", "Rosturi uniforme, etanșe"],
-    image: "/images/portfolio/poza7.jpg",
-    imageAlt: "Placare pereți și pardoseală în execuție, cu sistem de nivelare.",
+    image: "/images/proiecte/baie-marmura-gri/06-proces-placare-cu-nivelare.jpg",
+    imageAlt:
+      "Placare de perete în execuție: plăci aspect marmură gri aliniate cu sistem de clipsuri de nivelare.",
+    focal: "50% 50%",
   },
   {
     slug: "renovari-bai",
@@ -129,8 +198,10 @@ export const services: Service[] = [
     summary:
       "Coordonăm tot procesul — de la demontare și hidroizolație până la finisaje și montaj sanitar.",
     bullets: ["Hidroizolație în zonele umede", "Trasee apă și canalizare", "Finisaje și montaj obiecte"],
-    image: "/images/portfolio/poza6.jpg",
-    imageAlt: "Baie finalizată: duș placat cu gresie bej și rigolă liniară.",
+    image: "/images/proiecte/baie-wc-suspendat/01-dupa-wc-suspendat.jpg",
+    imageAlt:
+      "Baie compactă finalizată, cu plăci de format mare aspect beton, WC suspendat cu clapetă încastrată și nișă-poliță.",
+    focal: "50% 45%",
   },
   {
     slug: "teracota-sobe",
@@ -138,8 +209,15 @@ export const services: Service[] = [
     summary:
       "Lucrări de teracotă și placări ceramice decorative, cu atenție la tipar, ton și aliniere.",
     bullets: ["Selectarea tiparului", "Aliniere pe module", "Detalii de racord curate"],
-    image: "/images/portfolio/poza3.jpg",
-    imageAlt: "Placare ceramică cu textură caldă, rost diagonal pe pardoseală.",
+    // CONFIRM_OWNER: nu există încă nicio fotografie de teracotă/sobă în materialul
+    // primit. Imaginea de mai jos ilustrează execuția ceramică decorativă (muchii
+    // tăiate la 45°), NU o lucrare de teracotă. Se înlocuiește la prima lucrare
+    // fotografiată — sau serviciul se scoate din grilă dacă nu se mai execută.
+    image: "/images/proiecte/baie-cada-placata/02-cada-placata-detaliu-muchii.jpg",
+    imageAlt:
+      "Detaliu de execuție ceramică: muchie exterioară tăiată la 45°, fără profil metalic, și racord curat la peretele placat.",
+    focal: "50% 55%",
+    imageConfirm: CONFIRM,
   },
   {
     slug: "placari-exterioare",
@@ -147,31 +225,36 @@ export const services: Service[] = [
     summary:
       "Placări rezistente la îngheț pentru terase, scări și fațade, cu pante și rosturi tehnice corecte.",
     bullets: ["Adezivi pentru exterior", "Pante de scurgere", "Rosturi de dilatare"],
-    image: "/images/portfolio/poza1.jpg",
-    imageAlt: "Fațadă și scară exterioară placate cu plăci porțelanate format mare.",
+    image: "/images/proiecte/fatada-si-scara-exterioara/01-fatada-si-scara.jpg",
+    imageAlt:
+      "Fațadă și scară exterioară placate cu plăci porțelanate de format mare, cu trepte și contratrepte aliniate.",
+    focal: "50% 50%",
   },
 ];
 
 export const flagship = {
   kicker: "Proiect reprezentativ",
-  // CONFIRM_OWNER: real project, media and right to publish (checklist D).
-  title: "Baie placată cu travertin, format mare",
+  // Descrierea de mai jos spune DOAR ce se vede în fotografii. Locația, suprafața,
+  // durata și acordul scris de publicare rămân CONFIRM_OWNER (checklist D.31).
+  title: "Cadă zidită și placată integral, cu muchii la 45°",
   location: "Proiect real · locație de confirmat",
   summary:
-    "O baie placată cu gresie bej de format mare, cu rost continuu pe pardoseală și duș cu rigolă liniară.",
+    "O cadă zidită și îmbrăcată complet în plăci de format mare, cu muchiile tăiate la 45° și tiparul continuat de pe perete pe corpul căzii.",
   challenge:
-    "Pereți neregulați și un traseu de instalații care complica alinierea plăcilor de format mare.",
+    "Corpul căzii are muchii expuse pe trei laturi, unde un profil metalic ar fi rupt continuitatea plăcii.",
   approach:
-    "Am corectat planul suportului, am pretrasat fiecare rând și am păstrat rostul continuu între pereți și pardoseală.",
+    "Am tăiat muchiile la 45° și am selectat plăcile astfel încât desenul să curgă de pe perete pe cant și mai departe pe blat.",
   result:
-    "O suprafață citită ca un singur material, cu racorduri curate și întreținere ușoară.",
+    "Cada se citește ca un volum dintr-un singur material, fără margini metalice și fără întreruperi de tipar.",
   metrics: [
-    { value: "18 m²", label: "suprafață placată", confirm: CONFIRM },
-    { value: "12 zile", label: "durată execuție", confirm: CONFIRM },
-    { value: "120×60", label: "format plăci (cm)", confirm: CONFIRM },
+    { value: "—", label: "suprafață placată", confirm: CONFIRM },
+    { value: "—", label: "durată execuție", confirm: CONFIRM },
+    { value: "—", label: "format plăci", confirm: CONFIRM },
   ],
-  image: "/images/portfolio/poza3.jpg",
-  imageAlt: "Baie placată cu gresie bej travertin, duș cu rigolă liniară.",
+  image: "/images/proiecte/baie-cada-placata/01-cada-placata-ansamblu.jpg",
+  imageAlt:
+    "Cadă zidită și placată integral cu plăci aspect marmură, cu muchii tăiate la 45° și tipar continuu pe perete.",
+  focal: "50% 55%",
 };
 
 export const precisionPoints = [
@@ -207,111 +290,167 @@ export const estimator = {
   title: "Află un interval, nu o surpriză",
   body: "Instrumentul nostru explică factorii care influențează costul — suprafață, tip de placă, pregătirea suportului și complexitatea — și oferă un interval orientativ. Prețul final se stabilește după evaluare.",
   factors: ["Suprafața și geometria", "Formatul și tipul plăcii", "Starea suportului", "Hidroizolație și instalații"],
-  cta: { label: "Calculează orientativ", href: "#contact" },
+  // Label must describe what actually happens: this scrolls to the form, it
+  // does not compute anything (spec 06 forbids promising an interaction that
+  // does not exist). A real estimator is blocked on owner pricing.
+  cta: { label: "Cere o estimare", href: "#contact" },
   note: "Estimatorul nu este o ofertă contractuală (ADR-012).",
 };
 
-// Real project photos supplied by the owner (docs/poze → public/images/portfolio).
-// Right to publish is implied by the owner providing them; project metadata
-// (locality, surface, date) remains CONFIRM_OWNER until verified.
+// Fotografii reale, livrate de proprietar și publicate din docs/poze prin
+// scripts/build-media.mjs. Dreptul de publicare per proiect rămâne CONFIRM_OWNER:
+// primirea fișierelor nu este acordul scris cerut de checklist D.31.
+// Fotografii reale, livrate de proprietar și publicate din docs/poze prin
+// scripts/build-media.mjs. Dreptul de publicare per proiect rămâne CONFIRM_OWNER:
+// primirea fișierelor nu este acordul scris cerut de checklist D.31.
 export const portfolio: PortfolioItem[] = [
   {
-    slug: "renovare-baie-inainte-dupa",
-    title: "Renovare baie — de la suport la finisaj",
-    type: "Hidroizolație · placare duș · rigolă liniară",
+    slug: "baie-marmura-gri",
+    title: "Renovare completă de baie — de la demolare la finisaj",
+    type: "Demolare · instalații · placare · montaj sanitar",
     category: "Baie",
     featured: true,
-    before: "/images/portfolio/poza5.jpg",
-    beforeAlt: "Baie înainte de placare: pereți pregătiți și instalații montate.",
-    image: "/images/portfolio/poza6.jpg",
-    imageAlt: "Baie după placare: gresie bej de format mare și duș cu rigolă liniară.",
+    before: "/images/proiecte/baie-marmura-gri/01-inainte-demolare.jpg",
+    beforeAlt:
+      "Baie de bloc în demolare: faianța veche desprinsă, moloz pe pardoseală și sac de resturi lângă bateria demontată.",
+    beforeFocal: "50% 40%",
+    image: "/images/proiecte/baie-marmura-gri/09-dupa-ansamblu.jpg",
+    imageAlt:
+      "Vedere de ansamblu a băii finalizate: cabină de duș, lavoar cu mobilier alb și oglindă cu iluminare.",
+    focal: "50% 50%",
   },
   {
-    slug: "dus-travertin",
-    title: "Duș placat cu rigolă liniară",
-    type: "Placare baie · gresie bej",
+    slug: "cada-placata-portelan",
+    title: "Cadă placată în porțelan",
+    type: "Muchii tăiate la 45° · tipar continuu",
     category: "Baie",
-    image: "/images/portfolio/poza3.jpg",
-    imageAlt: "Cabină de duș placată cu gresie bej travertin și rost diagonal pe pardoseală.",
+    image: "/images/proiecte/baie-cada-placata/01-cada-placata-ansamblu.jpg",
+    imageAlt:
+      "Cadă zidită și placată integral cu plăci aspect marmură, cu muchii tăiate la 45° și tipar continuu pe perete.",
+    focal: "50% 55%",
   },
   {
-    slug: "living-marmura",
-    title: "Living cu gresie aspect marmură",
-    type: "Pardoseală format mare",
-    category: "Interior",
-    image: "/images/portfolio/poza8.jpg",
-    imageAlt: "Living amplu cu pardoseală din gresie aspect marmură albă, lucioasă.",
+    slug: "baie-marmura-alba",
+    title: "Baie cu marmură albă și accent negru",
+    type: "Porțelan lucios · duș fără prag",
+    category: "Baie",
+    image: "/images/proiecte/baie-marmura-alba/06-dupa-zona-dus.jpg",
+    imageAlt:
+      "Baie finalizată în plăci albe aspect marmură, lucioase, cu zonă de duș fără prag și coloană pentru rezervor încastrat.",
+    focal: "50% 50%",
   },
   {
-    slug: "fatada-scara-exterior",
-    title: "Fațadă și scară exterioară",
+    slug: "baie-wc-suspendat",
+    title: "Baie compactă cu WC suspendat",
+    type: "Format mare aspect beton · nișă-poliță",
+    category: "Baie",
+    image: "/images/proiecte/baie-wc-suspendat/01-dupa-wc-suspendat.jpg",
+    imageAlt:
+      "Baie compactă finalizată, cu plăci de format mare aspect beton, WC suspendat cu clapetă încastrată și nișă-poliță.",
+    focal: "50% 45%",
+  },
+  {
+    slug: "cabina-dus-marmura-gri",
+    title: "Cabină de duș în baie placată",
+    type: "Aspect marmură gri · profile negre",
+    category: "Baie",
+    image: "/images/proiecte/baie-marmura-gri/08-dupa-cabina-dus.jpg",
+    imageAlt:
+      "Baie finalizată, cu cabină de duș semirotundă cu profile negre și pereți placați cu plăci aspect marmură gri.",
+    focal: "50% 45%",
+  },
+  {
+    slug: "perete-accent-marmura-neagra",
+    title: "Perete de accent din marmură neagră",
+    type: "Contrast alb–negru · rigolă liniară",
+    category: "Baie",
+    image: "/images/proiecte/baie-marmura-alba/08-dupa-accent-marmura-neagra.jpg",
+    imageAlt:
+      "Perete de accent din plăci aspect marmură neagră, în contrast cu placarea albă și rigola liniară din pardoseală.",
+    focal: "50% 45%",
+  },
+  {
+    slug: "nisa-wc-suspendat",
+    title: "Nișă placată pentru WC suspendat",
+    type: "Rezervor încastrat · colțuri la 45°",
+    category: "Baie",
+    image: "/images/proiecte/baie-cada-placata/03-nisa-wc-suspendat.jpg",
+    imageAlt:
+      "Nișă placată pentru rezervor încastrat de WC suspendat, cu poliță din plăci și colțuri tăiate la 45°.",
+    focal: "50% 50%",
+  },
+  {
+    slug: "hidroizolatie-si-incalzire-in-pardoseala",
+    title: "Hidroizolație și încălzire în pardoseală",
+    type: "În execuție · zonă umedă și rigolă",
+    category: "Proces",
+    image: "/images/proiecte/baie-marmura-alba/03-proces-hidroizolatie-si-incalzire.jpg",
+    imageAlt:
+      "Hidroizolație aplicată pe pardoseală și pereți, cu cablu de încălzire în pardoseală montat pe plasă și rigolă liniară.",
+    focal: "50% 55%",
+  },
+  {
+    slug: "placare-cu-sistem-de-nivelare",
+    title: "Placare cu sistem de nivelare",
+    type: "În execuție · plăci de format mare",
+    category: "Proces",
+    image: "/images/proiecte/baie-marmura-gri/06-proces-placare-cu-nivelare.jpg",
+    imageAlt:
+      "Placare de perete în execuție: plăci aspect marmură gri aliniate cu sistem de clipsuri de nivelare.",
+    focal: "50% 50%",
+  },
+  {
+    slug: "nisa-tehnica-si-polita",
+    title: "Nișă tehnică și poliță placată",
+    type: "În execuție · acces la apometru",
+    category: "Proces",
+    image: "/images/proiecte/baie-marmura-gri/04-proces-nisa-tehnica.jpg",
+    imageAlt:
+      "Nișă tehnică lăsată deschisă pentru apometru și tubulatura de ventilație, cu poliță placată și fixată cu bandă.",
+    focal: "50% 35%",
+  },
+  {
+    slug: "cuva-dus-zidita",
+    title: "Cuvă de duș zidită pe rigolă liniară",
+    type: "În execuție · BCA și șapă",
+    category: "Proces",
+    image: "/images/proiecte/compartimentari-si-cuva-dus/01-proces-cuva-dus-zidita.jpg",
+    imageAlt:
+      "Cuvă de duș zidită din blocuri BCA în jurul unei rigole liniare deja montate, pe șapă proaspătă.",
+    focal: "50% 50%",
+  },
+  {
+    slug: "fatada-si-scara-exterioara",
+    title: "Fațadă ventilată și scară exterioară",
     type: "Placare exterioară · porțelan format mare",
     category: "Exterior",
-    image: "/images/portfolio/poza1.jpg",
-    imageAlt: "Fațadă și scară exterioară placate cu plăci porțelanate gri de format mare.",
+    image: "/images/proiecte/fatada-si-scara-exterioara/01-fatada-si-scara.jpg",
+    imageAlt:
+      "Fațadă și scară exterioară placate cu plăci porțelanate de format mare, cu trepte și contratrepte aliniate.",
+    focal: "50% 50%",
   },
   {
-    slug: "placare-nivelare",
-    title: "Placare pereți cu sistem de nivelare",
-    type: "În execuție · gresie travertin",
-    category: "Proces",
-    image: "/images/portfolio/poza7.jpg",
-    imageAlt: "Placare pereți și pardoseală în execuție, cu clipsuri de nivelare.",
-  },
-  {
-    slug: "spatiu-tehnic-gri",
-    title: "Spațiu tehnic placat integral",
-    type: "Pereți și pardoseală · gresie gri marmorată",
-    category: "Comercial",
-    image: "/images/portfolio/poza9.jpg",
-    imageAlt: "Spațiu tehnic placat complet cu gresie gri marmorată și rigolă de scurgere.",
-  },
-  {
-    slug: "garaj-gresie",
-    title: "Garaj cu gresie gri marmorată",
-    type: "Placare pereți și pardoseală",
-    category: "Comercial",
-    image: "/images/portfolio/poza10.jpg",
-    imageAlt: "Garaj placat cu gresie gri marmorată, vedere spre ușa secțională.",
-  },
-  {
-    slug: "scara-exterioara-executie",
-    title: "Scară exterioară în execuție",
-    type: "Proces · trepte și terasă",
-    category: "Proces",
-    image: "/images/portfolio/poza2.jpg",
-    imageAlt: "Scară exterioară în curs de placare, cu clipsuri de nivelare pe terasă.",
-  },
-  {
-    slug: "hidroizolatie-zona-umeda",
-    title: "Hidroizolație în zona de duș",
-    type: "Proces · pregătire zonă umedă",
-    category: "Proces",
-    image: "/images/portfolio/poza4.jpg",
-    imageAlt: "Hidroizolație aplicată în zona de duș, înainte de placare.",
+    slug: "trepte-si-terasa-in-executie",
+    title: "Trepte și terasă în execuție",
+    type: "În execuție · placare exterioară",
+    category: "Exterior",
+    image: "/images/proiecte/fatada-si-scara-exterioara/02-proces-trepte-si-terasa.jpg",
+    imageAlt:
+      "Scară exterioară în curs de placare, cu plăci poziționate pe terasă și clipsuri de nivelare.",
+    focal: "50% 50%",
   },
 ];
 
-export const reviews: Review[] = [
-  // CONFIRM_OWNER: real reviews with source/consent only (checklist F, spec 09).
-  {
-    quote: "Text recenzie reală — se publică doar cu sursă și consimțământ.",
-    author: "Client (exemplu)",
-    context: "Renovare baie · sursă de confirmat",
-    confirm: CONFIRM,
-  },
-  {
-    quote: "Text recenzie reală — se publică doar cu sursă și consimțământ.",
-    author: "Client (exemplu)",
-    context: "Montaj gresie · sursă de confirmat",
-    confirm: CONFIRM,
-  },
-];
+/**
+ * Empty until real, sourced, consented reviews exist (checklist G4).
+ * A testimonial is quoted, never drafted — see DECISIONS D-007. Nothing may be
+ * written here on the owner's behalf, and the section does not render while empty.
+ */
+export const reviews: Review[] = [];
 
-export const faqs: Faq[] = [
-  { q: "Faceți și demontarea plăcilor vechi?", a: "Conținut de confirmat cu proprietarul (CONFIRM_OWNER)." },
-  { q: "Lucrați cu materialele clientului?", a: "Conținut de confirmat cu proprietarul (CONFIRM_OWNER)." },
-  { q: "În cât timp primesc o estimare?", a: "Conținut de confirmat cu proprietarul (CONFIRM_OWNER)." },
-  { q: "Ce garanție oferiți?", a: "Conținut de confirmat cu proprietarul (CONFIRM_OWNER)." },
-  { q: "În ce localități vă deplasați?", a: "Conținut de confirmat cu proprietarul (CONFIRM_OWNER)." },
-];
+/**
+ * Empty until the owner answers (checklist F). Five questions whose answer was
+ * literally "Conținut de confirmat cu proprietarul" used to render here as real
+ * FAQ entries.
+ */
+export const faqs: Faq[] = [];

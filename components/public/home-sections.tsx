@@ -9,15 +9,18 @@ import {
   reviews,
   services,
   trustFacts,
-  channels,
+  publicChannels,
 } from "@/lib/content";
 import type { Locale } from "@/lib/i18n";
 import { Arrow, Button, Container, Kicker, Section, SectionHeading } from "@/components/public/ui";
 import { Journey } from "@/components/public/journey/journey";
+import { LeadForm } from "@/components/public/lead-form";
 import { CinematicHero } from "@/components/public/hero/cinematic-hero";
 
 /* -------------------------------------------------------- Trust strip */
 function TrustStrip() {
+  // Renders nothing until the owner supplies figures he can evidence.
+  if (trustFacts.length === 0) return null;
   return (
     <section className="joint-rule bg-canvas-raised">
       <Container className="py-10">
@@ -29,7 +32,6 @@ function TrustStrip() {
             </li>
           ))}
         </ul>
-        <p className="mt-6 text-xs text-bronze-deep">Cifre demonstrative — de confirmat și dovedit (CONFIRM_OWNER).</p>
       </Container>
     </section>
   );
@@ -48,12 +50,13 @@ function Services() {
         <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2">
           {services.map((s, i) => (
             <article key={s.slug} className="group transition-transform duration-300 hover:-translate-y-1">
-              <div className="relative aspect-[16/10] overflow-hidden rounded-sm border border-line">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-sm border border-line">
                 <Image
                   src={s.image}
                   alt={s.imageAlt}
                   fill
                   sizes="(min-width:640px) 45vw, 100vw"
+                  style={{ objectPosition: s.focal ?? "50% 50%" }}
                   className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                 />
               </div>
@@ -91,6 +94,7 @@ function Flagship() {
                 alt={flagship.imageAlt}
                 fill
                 sizes="(min-width:1024px) 50vw, 100vw"
+                style={{ objectPosition: flagship.focal ?? "50% 50%" }}
                 className="object-cover"
               />
             </div>
@@ -236,26 +240,28 @@ function Portfolio() {
 
         {/* Featured before/after — the strongest proof story, accessible side-by-side. */}
         {featured && featured.before && featured.beforeAlt ? (
-          <article className="mt-12 overflow-hidden rounded-sm border border-line-strong bg-canvas-raised">
+          <article className="mt-12 mx-auto max-w-[56rem] overflow-hidden rounded-sm border border-line-strong bg-canvas-raised">
             <div className="grid sm:grid-cols-2">
-              <figure className="relative aspect-[4/3] sm:aspect-[4/5]">
+              <figure className="relative aspect-[3/4]">
                 <Image
                   src={featured.before}
                   alt={featured.beforeAlt}
                   fill
-                  sizes="(min-width:640px) 42vw, 100vw"
+                  sizes="(min-width:896px) 448px, (min-width:640px) 44vw, 100vw"
+                  style={{ objectPosition: featured.beforeFocal ?? "50% 50%" }}
                   className="object-cover"
                 />
                 <figcaption className="absolute left-4 top-4 rounded-xs bg-ink/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-canvas">
                   Înainte
                 </figcaption>
               </figure>
-              <figure className="relative aspect-[4/3] border-t border-line sm:aspect-[4/5] sm:border-l sm:border-t-0">
+              <figure className="relative aspect-[3/4] border-t border-line sm:border-l sm:border-t-0">
                 <Image
                   src={featured.image}
                   alt={featured.imageAlt}
                   fill
-                  sizes="(min-width:640px) 42vw, 100vw"
+                  sizes="(min-width:896px) 448px, (min-width:640px) 44vw, 100vw"
+                  style={{ objectPosition: featured.focal ?? "50% 50%" }}
                   className="object-cover"
                 />
                 <figcaption className="absolute left-4 top-4 rounded-xs bg-bronze px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-canvas-raised">
@@ -291,6 +297,7 @@ function Portfolio() {
                   alt={p.imageAlt}
                   fill
                   sizes="(min-width:1024px) 30vw, (min-width:640px) 45vw, 50vw"
+                  style={{ objectPosition: p.focal ?? "50% 50%" }}
                   className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                 />
                 <span className="absolute left-3 top-3 rounded-xs bg-canvas/90 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-ink">
@@ -311,6 +318,8 @@ function Portfolio() {
 
 /* ------------------------------------------------------------ Reviews */
 function Reviews() {
+  // No reviews until they are real, sourced and consented (DECISIONS D-007).
+  if (reviews.length === 0) return null;
   return (
     <Section tone="surface" divide>
       <Container>
@@ -340,6 +349,7 @@ function Reviews() {
 
 /* ---------------------------------------------------------------- FAQ */
 function Faq() {
+  if (faqs.length === 0) return null;
   return (
     <Section tone="canvas" divide>
       <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
@@ -363,33 +373,58 @@ function Faq() {
 }
 
 /* ----------------------------------------------------------- Final CTA */
-function FinalCta() {
+// This is the ONLY conversion endpoint on the site. Every CTA above anchors to
+// #contact, so if this section does not accept a request, nothing on the page does.
+function FinalCta({ locale }: { locale: Locale }) {
   return (
     <section id="contact" className="relative overflow-hidden bg-ink text-canvas">
       <div className="tile-grid tile-grid-fade pointer-events-none absolute inset-0 opacity-[0.06]" aria-hidden="true" />
       <Container className="relative py-20 sm:py-28">
-        <div className="max-w-2xl">
-          <Kicker>Contact</Kicker>
-          <h2 className="mt-5 text-display-2 text-canvas">
-            Spune-ne despre spațiul tău. Primești un interval și pașii următori.
-          </h2>
-          <p className="mt-5 text-base leading-relaxed text-canvas/75">
-            Trimite câteva fotografii și detaliile lucrării. Datele de contact reale se confirmă cu
-            proprietarul <span className="text-bronze-light">(CONFIRM_OWNER)</span>.
-          </p>
-        </div>
+        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+          <div>
+            <Kicker>Contact</Kicker>
+            <h2 className="mt-5 text-display-2 text-canvas">
+              Spune-ne despre spațiul tău
+            </h2>
+            <p className="mt-5 text-base leading-relaxed text-canvas/75">
+              Scrie-ne ce ai de placat sau de renovat. Revenim cu pașii următori și cu ce ne
+              trebuie ca să putem estima corect.
+            </p>
 
-        <div className="mt-9 flex flex-wrap gap-3">
-          <Button href="#contact" variant="bronze">
-            Trimite cererea <Arrow />
-          </Button>
-          {channels
-            .filter((c) => c.type === "phone" || c.type === "telegram")
-            .map((c) => (
-              <Button key={c.type} href={c.href} variant="ghost-light">
-                {c.type === "phone" ? c.label : "Scrie pe Telegram"}
-              </Button>
-            ))}
+            <ul className="mt-8 space-y-3 text-sm text-canvas/70">
+              <li className="flex gap-3">
+                <span aria-hidden="true" className="font-display text-bronze-light">01</span>
+                Ne spui serviciul și, dacă poți, suprafața aproximativă.
+              </li>
+              <li className="flex gap-3">
+                <span aria-hidden="true" className="font-display text-bronze-light">02</span>
+                Te sunăm ca să clarificăm detaliile și starea suportului.
+              </li>
+              <li className="flex gap-3">
+                <span aria-hidden="true" className="font-display text-bronze-light">03</span>
+                Programăm o evaluare la fața locului atunci când este necesar.
+              </li>
+            </ul>
+
+            <div className="mt-8 border-t border-canvas/15 pt-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-canvas/50">
+                Sau direct la telefon
+              </p>
+              {publicChannels.map((c) => (
+                <a
+                  key={c.type}
+                  href={c.href}
+                  className="mt-2 inline-block font-display text-2xl text-canvas transition-colors hover:text-bronze-light"
+                >
+                  {c.label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-sm border border-canvas/15 bg-canvas/[0.04] p-6 sm:p-8">
+            <LeadForm locale={locale} />
+          </div>
         </div>
       </Container>
     </section>
@@ -410,7 +445,7 @@ export function HomeSections({ locale }: { locale: Locale }) {
       <Portfolio />
       <Reviews />
       <Faq />
-      <FinalCta />
+      <FinalCta locale={locale} />
     </>
   );
 }

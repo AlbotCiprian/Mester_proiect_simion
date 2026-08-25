@@ -1,12 +1,18 @@
 import Image from "next/image";
-import { baie } from "@/lib/journey";
+import { baie, tour, type JourneyStill } from "@/lib/journey";
 import { Arrow, Button, Container, Kicker } from "@/components/public/ui";
 
 // Always server-rendered. This is the accessible / no-JS / reduced-motion /
 // SEO baseline. The client enhancer (ScrollJourney) hides it via CSS when it
 // activates the cinematic experience. See spec 29 §5 (tiers D/E) and §9.
+//
+// Since the chapter no longer ships a frame sequence (lib/journey.ts, D-006),
+// this block is what most visitors actually see, so it carries the full stage
+// story rather than a single representative frame.
 export function JourneyStatic() {
-  const { price } = baie;
+  const { price, media } = baie;
+  const middle = media.stages.slice(1, -1);
+
   return (
     <section className="journey-static joint-rule bg-surface py-20 sm:py-28" aria-labelledby="journey-static-title">
       <Container>
@@ -18,60 +24,111 @@ export function JourneyStatic() {
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_0.9fr] lg:items-start">
           <figure className="relative">
-            <div className="relative aspect-[16/10] overflow-hidden rounded-sm border border-line-strong">
-              <Image
-                src={baie.frames.poster}
-                alt="Baie placată — cadru reprezentativ (demonstrativ, open-source)"
-                fill
-                sizes="(min-width:1024px) 60vw, 100vw"
-                className="object-cover"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <StageFrame still={media.before} label="Înainte" tone="ink" ratio="aspect-[3/4]" />
+              <StageFrame still={media.after} label="După" tone="bronze" ratio="aspect-[3/4]" />
             </div>
-            <figcaption className="mt-2 text-xs text-muted">{baie.attribution}</figcaption>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <BeforeAfter src={baie.frames.firstFrame} label="Înainte" />
-              <BeforeAfter src={baie.frames.lastFrame} label="După" />
-            </div>
-          </figure>
-
-          <aside className="rounded-sm border border-line-strong bg-canvas-raised p-6 sm:p-7">
-            <ol className="space-y-2.5">
-              {baie.stages.map((s, i) => (
-                <li key={s} className="flex items-center gap-3 text-sm text-ink-soft">
-                  <span className="font-display text-bronze-deep">0{i + 1}</span>
-                  {s}
+            {/* Middle stages. Labels sit UNDER the frame: at three-across on a
+                phone the tile is ~110px and an overlaid badge covers the photo. */}
+            <ol className="mt-3 grid grid-cols-3 gap-3">
+              {middle.map((still, i) => (
+                <li key={still.src}>
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-sm border border-line">
+                    <Image
+                      src={still.src}
+                      alt={still.alt}
+                      fill
+                      sizes="(min-width:1024px) 16vw, 30vw"
+                      style={{ objectPosition: still.focal ?? "50% 50%" }}
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-[0.7rem] leading-snug text-muted">
+                    <span className="font-display text-bronze-deep">0{i + 2}</span> {still.label}
+                  </p>
                 </li>
               ))}
             </ol>
 
-            <div className="mt-6 border-t border-line pt-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-bronze-deep">Preț orientativ</p>
-              <p className="mt-2 text-2xl font-semibold text-ink">
-                {price.from === null ? "La cerere" : `de la ${price.from} ${price.unit}`}{" "}
-                <span className="align-middle text-xs font-normal text-muted">(CONFIRM_OWNER)</span>
-              </p>
-              <p className="mt-1 text-xs text-muted">Include: {price.includes.join(", ")}.</p>
-              <p className="mt-1 text-xs text-muted">Evaluarea finală depinde de suprafață și condiții.</p>
-            </div>
+            <figcaption className="mt-3 text-xs text-muted">{baie.attribution}</figcaption>
+          </figure>
 
-            <div className="mt-6">
+          <aside className="rounded-sm border border-line-strong bg-canvas-raised p-6 sm:p-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-bronze-deep">Preț orientativ</p>
+            <p className="mt-2 text-2xl font-semibold text-ink">
+              {price.from === null ? "La cerere" : `de la ${price.from} ${price.unit}`}{" "}
+              <span className="align-middle text-xs font-normal text-muted">(CONFIRM_OWNER)</span>
+            </p>
+            <p className="mt-1 text-xs text-muted">Include: {price.includes.join(", ")}.</p>
+            <p className="mt-1 text-xs text-muted">Evaluarea finală depinde de suprafață și condiții.</p>
+
+            <div className="mt-6 border-t border-line pt-5">
               <Button href={baie.cta.href} variant="bronze" className="w-full">
                 {baie.cta.label} <Arrow />
               </Button>
             </div>
           </aside>
         </div>
+
+        {/* Owner footage of a DIFFERENT finished bathroom — labelled as such so it is
+            never read as a stage of the renovation documented above. Portrait and
+            user-initiated: no autoplay, nothing preloaded but the poster. */}
+        <figure className="mt-8 grid items-center gap-6 rounded-sm border border-line-strong bg-canvas-raised p-5 sm:grid-cols-[minmax(0,16rem)_1fr] sm:p-6">
+          {/* width/height reserve the box so the poster cannot shift the layout.
+              The export carries no audio track, so no captions track is required. */}
+          <video
+            className="h-auto w-full rounded-sm border border-line bg-ink"
+            src={tour.src}
+            poster={tour.poster}
+            width={tour.width}
+            height={tour.height}
+            aria-label={tour.caption}
+            controls
+            muted
+            loop
+            playsInline
+            preload="none"
+          />
+          {/* figcaption must be a direct child of figure — hence the spans. */}
+          <figcaption>
+            <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-bronze-deep">
+              {tour.label}
+            </span>
+            <span className="mt-2 block max-w-md text-sm text-ink-soft">{tour.caption}</span>
+          </figcaption>
+        </figure>
       </Container>
     </section>
   );
 }
 
-function BeforeAfter({ src, label }: { src: string; label: string }) {
+function StageFrame({
+  still,
+  label,
+  tone,
+  ratio,
+}: {
+  still: JourneyStill;
+  label: string;
+  tone: "ink" | "bronze";
+  ratio: string;
+}) {
   return (
-    <figure className="relative aspect-[4/3] overflow-hidden rounded-sm border border-line">
-      <Image src={src} alt={`${label} (demonstrativ)`} fill sizes="(min-width:1024px) 30vw, 50vw" className="object-cover" />
-      <figcaption className="absolute left-2 top-2 rounded-xs bg-ink/75 px-2 py-0.5 text-[0.66rem] font-semibold uppercase tracking-wide text-canvas">
+    <figure className={`relative ${ratio} overflow-hidden rounded-sm border border-line`}>
+      <Image
+        src={still.src}
+        alt={still.alt}
+        fill
+        sizes="(min-width:1024px) 24vw, 46vw"
+        style={{ objectPosition: still.focal ?? "50% 50%" }}
+        className="object-cover"
+      />
+      <figcaption
+        className={`absolute left-2 top-2 rounded-xs px-2 py-0.5 text-[0.66rem] font-semibold uppercase tracking-wide ${
+          tone === "bronze" ? "bg-bronze text-canvas-raised" : "bg-ink/75 text-canvas"
+        }`}
+      >
         {label}
       </figcaption>
     </figure>

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { baie } from "@/lib/journey";
 import { track } from "@/lib/analytics";
-import { detectCapability, journeyMode } from "@/lib/capability";
+import { detectCapability, journeyMode, resolveJourneyMode } from "@/lib/capability";
 
 type Mode = "idle" | "scrub" | "loop";
 
@@ -24,7 +24,7 @@ export default function ScrollJourney() {
 
   // 1) Tier detection via the shared capability module (spec 29 §9).
   useEffect(() => {
-    const chosen = journeyMode(detectCapability());
+    const chosen = resolveJourneyMode(journeyMode(detectCapability()), baie.media);
     if (chosen === "static") return; // stay on static fallback
     setMode(chosen);
     document.getElementById(rootId)?.setAttribute("data-journey", "enhanced");
@@ -38,16 +38,17 @@ export default function ScrollJourney() {
     const trackEl = trackRef.current;
     if (!trackEl) return;
 
-    const { count, dirDesktop, dirMobile, ext } = baie.frames;
+    const scrub = baie.media.scrub;
+    const count = scrub?.count ?? 0;
 
     // Preload the right responsive frame set for scrub mode.
-    if (mode === "scrub") {
-      const dir = window.innerWidth >= 1024 ? dirDesktop : dirMobile;
+    if (mode === "scrub" && scrub) {
+      const dir = window.innerWidth >= 1024 ? scrub.dirDesktop : scrub.dirMobile;
       const imgs: HTMLImageElement[] = [];
       for (let i = 0; i < count; i++) {
         const img = new Image();
         img.decoding = "async";
-        img.src = `${dir}/frame-${String(i + 1).padStart(4, "0")}.${ext}`;
+        img.src = `${dir}/frame-${String(i + 1).padStart(4, "0")}.${scrub.ext}`;
         imgs.push(img);
       }
       framesRef.current = imgs;
@@ -72,7 +73,7 @@ export default function ScrollJourney() {
       a.current += (a.target - a.current) * 0.16;
       if (Math.abs(a.target - a.current) < 0.0005) a.current = a.target;
 
-      if (mode === "scrub") {
+      if (mode === "scrub" && count > 0) {
         const idx = Math.round(a.current * (count - 1));
         if (idx !== a.drawn) {
           drawFrame(idx);
@@ -176,8 +177,8 @@ export default function ScrollJourney() {
             <video
               ref={videoRef}
               className="absolute inset-0 h-full w-full object-cover"
-              src={baie.frames.loop}
-              poster={baie.frames.poster}
+              src={baie.media.loop?.src}
+              poster={baie.media.loop?.poster}
               muted
               loop
               playsInline

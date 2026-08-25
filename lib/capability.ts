@@ -31,6 +31,21 @@ export function journeyMode(c: Capability): JourneyMode {
   return "scrub";
 }
 
+// A tier the device could run is still unavailable when the chapter has no media
+// for it. Downgrade only — never promote a device into a heavier tier than the
+// capability check allowed. See lib/journey.ts (JourneyMedia.scrub / .loop).
+export function resolveJourneyMode(
+  chosen: JourneyMode,
+  media: { scrub: unknown | null; loop: unknown | null },
+): JourneyMode {
+  if (chosen === "scrub") {
+    if (media.scrub) return "scrub";
+    return media.loop ? "loop" : "static";
+  }
+  if (chosen === "loop") return media.loop ? "loop" : "static";
+  return "static";
+}
+
 // Hero: autoplay the muted video, or keep the static poster.
 export type HeroMode = "video" | "static";
 export function heroMode(c: Capability): HeroMode {

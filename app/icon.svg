@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Placări ceramice">
+  <!-- Placeholder mark: four tiles around a ceramic joint, in the site's ink and
+       bronze tokens. Deliberately typographic-free — the brand name is not
+       decided yet (checklist A1/A2), so nothing here has to be unlearned. -->
+  <rect width="32" height="32" fill="#191613"/>
+  <g fill="#c9a06d">
+    <rect x="5" y="5" width="10" height="10" rx="1"/>
+    <rect x="17" y="5" width="10" height="10" rx="1"/>
+    <rect x="5" y="17" width="10" height="10" rx="1"/>
+    <rect x="17" y="17" width="10" height="10" rx="1"/>
+  </g>
+</svg>

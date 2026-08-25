@@ -31,7 +31,7 @@ export function CinematicHeroControls({
     const cap = detectCapability();
     const mode = heroMode(cap);
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
-    setSrc(isMobile ? media.mobileMp4 : media.desktopMp4);
+    setSrc(media.video ? (isMobile ? media.video.mobileMp4 : media.video.desktopMp4) : null);
     setObjectPosition(isMobile ? media.mobileObjectPosition : media.desktopObjectPosition);
     track("hero_view", {
       locale,

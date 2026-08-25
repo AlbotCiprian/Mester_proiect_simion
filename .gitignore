@@ -30,3 +30,11 @@ Thumbs.db
 
 # TS incremental build info
 *.tsbuildinfo
+
+.vercel
+
+# Never commit real environment files. .env.example holds NAMES ONLY and must
+# stay tracked — the re-assertion is needed because the broad rule above would
+# otherwise override the earlier negation.
+.env*
+!.env.example

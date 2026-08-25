@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import type { Locale } from "@/lib/i18n";
 import {
   canPublish,
@@ -30,20 +31,29 @@ export function CinematicHero({ locale }: { locale: Locale }) {
       aria-labelledby="hero-title"
       className="relative isolate flex min-h-svh flex-col justify-end overflow-hidden bg-ink lg:justify-center"
     >
-      {/* LCP poster — eager, art-directed; only the matching source loads. */}
-      <picture>
-        {media ? <source media="(max-width: 767px)" srcSet={media.mobilePoster} /> : null}
-        <img
-          src={media ? media.desktopPoster : heroMedia.desktopPoster}
-          alt=""
-          fetchPriority="high"
-          decoding="async"
-          style={{ objectPosition: media?.desktopObjectPosition ?? "50% 50%" }}
-          className="absolute inset-0 -z-20 h-full w-full object-cover"
-        />
-      </picture>
-
+      {/* LCP poster — eager, art-directed; only the matching source loads.
+          Nothing is emitted when the rights gate is closed: the previous version
+          fell back to heroMedia.desktopPoster, which leaked the gated URL. */}
       {media ? (
+        <picture>
+          <source media="(max-width: 767px)" srcSet={media.mobilePoster} />
+          <img
+            src={media.desktopPoster}
+            alt={media.posterAlt}
+            fetchPriority="high"
+            decoding="async"
+            style={
+              {
+                "--hero-pos-desktop": media.desktopObjectPosition,
+                "--hero-pos-mobile": media.mobileObjectPosition,
+              } as CSSProperties
+            }
+            className="hero-poster absolute inset-0 -z-20 h-full w-full object-cover"
+          />
+        </picture>
+      ) : null}
+
+      {media?.video ? (
         <CinematicHeroControls
           media={media}
           copy={{ pause: copy.pause, play: copy.play }}

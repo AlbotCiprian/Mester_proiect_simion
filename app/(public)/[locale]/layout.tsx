@@ -28,8 +28,18 @@ export default async function PublicLayout({
         <PreviewNotice />
         <SiteHeader locale={locale as Locale} />
       </div>
-      <main>{children}</main>
-      <SiteFooter />
+      {/* Skip link: the first focusable element on every page, so a keyboard
+          user is not walked through the whole header stack on each route. */}
+      <a
+        href="#main"
+        className="sr-only-field focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:h-auto focus:w-auto focus:rounded-xs focus:bg-ink focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-canvas"
+      >
+        Sari la conținut
+      </a>
+      <main id="main" tabIndex={-1}>
+        {children}
+      </main>
+      <SiteFooter locale={locale as Locale} />
       <StickyContactBar />
       {/* Spacer so the mobile sticky bar never covers footer content. */}
       <div aria-hidden="true" className="h-16 lg:hidden" />

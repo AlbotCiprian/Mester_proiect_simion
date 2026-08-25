@@ -1,0 +1,4 @@
+{
+  "//": "Scopes the test directory to ESM without forcing type:module on the Next.js app itself. Node 24 strips TypeScript types natively, so no build step is involved.",
+  "type": "module"
+}

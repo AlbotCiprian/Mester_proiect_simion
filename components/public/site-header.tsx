@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { nav, site } from "@/lib/content";
+import { nav, navHref, site } from "@/lib/content";
 import { localeLabels, locales, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/public/ui";
 
@@ -49,7 +49,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
 
         <nav className="hidden items-center gap-7 lg:flex" aria-label="Navigație principală">
           {nav.map((item) => (
-            <Link key={item.href} href={item.href} className={`text-sm font-medium transition-colors ${navLink}`}>
+            <Link
+              key={item.hash}
+              href={navHref(locale, item.hash)}
+              className={`text-sm font-medium transition-colors ${navLink}`}
+            >
               {item.label}
             </Link>
           ))}
@@ -103,8 +107,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <nav className="mx-auto flex max-w-[78rem] flex-col px-5 py-3 sm:px-8" aria-label="Navigație mobilă">
             {nav.map((item) => (
               <Link
-                key={item.href}
-                href={item.href}
+                key={item.hash}
+                href={navHref(locale, item.hash)}
                 onClick={() => setOpen(false)}
                 className="border-b border-line/70 py-3 text-base font-medium text-ink-soft last:border-0"
               >
@@ -112,7 +116,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               </Link>
             ))}
             <div className="mt-3 pb-2">
-              <Button href="#contact" variant="bronze" className="w-full">
+              <Button href={navHref(locale, "#contact")} variant="bronze" className="w-full">
                 Cere o estimare
               </Button>
             </div>
