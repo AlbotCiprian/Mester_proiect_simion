@@ -79,19 +79,10 @@ export interface Faq {
   a: string;
 }
 
-/**
- * GATE A — the content switch that lets the site be indexed.
- *
- * Flip to `true` ONLY when every one of these is answered and encoded below:
- *   A1 brand name shown to customers        A4 legal entity for the privacy notice
- *   B1 exact list of services               B2 teracotă/sobe: yes or no
- *   B4 localities actually served           E1-E3 phone + which messengers exist
- *   G1 written right to publish the project photographs
- *
- * A CONFIRM_OWNER comment does not stop a deploy; this boolean does. See
- * lib/seo.ts (INDEXABLE) — nothing else gates indexing.
- */
-export const GATE_A_COMPLETE = false;
+// GATE A now lives in config/indexability.mjs, because next.config.mjs must read
+// the same value and cannot import TypeScript. Re-exported here so nothing that
+// already imports it from lib/content breaks.
+export { GATE_A_COMPLETE } from "@/config/indexability.mjs";
 
 export const site = {
   // CONFIRM_OWNER: brand name, legal entity and logo are still undecided.

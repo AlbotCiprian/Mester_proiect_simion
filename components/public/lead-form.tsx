@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { submitLead } from "@/app/actions/lead";
 import { phone } from "@/lib/content";
+// lib/lead-labels, NOT lib/lead: importing the schema module would pull zod into
+// the client bundle (measured: +19.3 kB brotli) for six plain constants.
 import {
   contactPreferenceLabels,
   contactPreferences,
@@ -12,7 +14,7 @@ import {
   leadServiceSlugs,
   type LeadFieldErrors,
   type LeadResult,
-} from "@/lib/lead";
+} from "@/lib/lead-labels";
 import { track } from "@/lib/analytics";
 import { Arrow } from "@/components/public/ui";
 
@@ -23,10 +25,16 @@ import { Arrow } from "@/components/public/ui";
  * the server action still runs, and the result renders on the response.
  */
 
+// text-base is a hard requirement, not a preference: anything under 16px makes
+// iOS Safari zoom the viewport on focus. `focus:outline-none` is deliberately
+// ABSENT — the global :focus-visible ring is the only focus indicator these
+// controls have, and FIELD_ERR's focus state is otherwise byte-identical to its
+// resting state (WCAG 2.4.7). Fill and border are darkened so the control has a
+// perceivable boundary against the panel (SC 1.4.11).
 const FIELD =
-  "w-full rounded-xs border bg-canvas/5 px-3.5 py-3 text-[0.95rem] text-canvas placeholder:text-canvas/35 " +
-  "transition-colors focus:bg-canvas/10 focus:outline-none";
-const FIELD_OK = "border-canvas/25 focus:border-bronze-light";
+  "w-full rounded-xs border bg-ink/40 px-3.5 py-3 text-base text-canvas placeholder:text-canvas/55 " +
+  "transition-colors focus:bg-ink/25";
+const FIELD_OK = "border-canvas/35 focus:border-bronze-light";
 const FIELD_ERR = "border-danger-light focus:border-danger-light";
 const LABEL = "block text-xs font-semibold uppercase tracking-[0.16em] text-canvas/60";
 
@@ -77,7 +85,7 @@ export function LeadForm({ locale }: { locale: string }) {
           </a>
           .
         </p>
-        <p className="mt-4 text-xs text-canvas/45">Referință: {state.reference}</p>
+        <p className="mt-4 text-xs text-canvas/60">Referință: {state.reference}</p>
       </Outcome>
     );
   }
@@ -121,7 +129,10 @@ export function LeadForm({ locale }: { locale: string }) {
           role="alert"
           className="mb-8 rounded-sm border border-danger-light/50 bg-danger-light/10 p-4 text-sm text-danger-light"
         >
-          Mai sunt câteva câmpuri de corectat mai jos.
+          {/* Falls back to any error whose field is not rendered inline —
+              otherwise the banner says "correct the fields below" while every
+              visible field looks clean and nothing can be corrected. */}
+          {unrenderedError(errors) ?? "Mai sunt câteva câmpuri de corectat mai jos."}
         </div>
       ) : null}
 
@@ -264,7 +275,7 @@ export function LeadForm({ locale }: { locale: string }) {
 
         <div className="sm:col-span-2">
           <SubmitButton />
-          <p className="mt-3 text-xs text-canvas/45">
+          <p className="mt-3 text-xs text-canvas/60">
             Preferi să vorbești direct? Sună la{" "}
             <a className="text-canvas/70 underline underline-offset-4" href={`tel:${phone.e164}`}>
               {phone.display}
@@ -346,7 +357,7 @@ function Field({
         {...rest}
       />
       {hint ? (
-        <p id={hintId} className="mt-1.5 text-xs text-canvas/45">
+        <p id={hintId} className="mt-1.5 text-xs text-canvas/60">
           {hint}
         </p>
       ) : null}
@@ -381,4 +392,22 @@ function Outcome({
       {children}
     </div>
   );
+}
+
+/** Keys the form renders inline; anything else must surface in the banner. */
+const INLINE_ERROR_KEYS = new Set([
+  "name",
+  "phone",
+  "email",
+  "service",
+  "locality",
+  "message",
+  "consent",
+]);
+
+function unrenderedError(errors: LeadFieldErrors): string | null {
+  for (const [key, message] of Object.entries(errors)) {
+    if (!INLINE_ERROR_KEYS.has(key) && message) return message;
+  }
+  return null;
 }

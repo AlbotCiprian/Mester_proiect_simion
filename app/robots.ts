@@ -28,43 +28,28 @@ const SEO_TOOL_BOTS = [
   "CCBot",
 ];
 
-/**
- * Search and social crawlers that matter in this market. YandexBot is not
- * optional: Russian-speaking Chisinau uses Yandex meaningfully. The messenger
- * fetchers are here because leads arrive through shared links — blocking them
- * kills every preview card, which is a direct conversion loss.
+/*
+ * Crawlers we explicitly WANT, recorded here rather than emitted as directives.
+ *
+ * Under RFC 9309 a named user-agent group REPLACES the "*" group entirely, so
+ * giving each of these its own `Allow: /` would silently exempt exactly the
+ * crawlers that matter most from any future site-wide rule. They are already
+ * allowed by the permissive "*" group.
+ *
+ *   Search:     Googlebot, Googlebot-Image, Bingbot, YandexBot, Applebot,
+ *               DuckDuckBot
+ *               - YandexBot is not optional here: Russian-speaking Chisinau
+ *                 uses Yandex meaningfully.
+ *   Messengers: facebookexternalhit, Twitterbot, TelegramBot, WhatsApp, Viber
+ *               - leads arrive through shared links; blocking these kills every
+ *                 preview card, which is a direct conversion loss.
+ *   Assistants: GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, PerplexityBot,
+ *               Google-Extended, Applebot-Extended, meta-externalagent, Amazonbot
+ *               - being quotable in an answer to "cine montează gresie în
+ *                 Chișinău" is upside with a referral path.
+ *               - Google-Extended controls AI training only; it has no effect on
+ *                 Search indexing or ranking in either direction.
  */
-const ALLOWED_AGENTS = [
-  "Googlebot",
-  "Googlebot-Image",
-  "Bingbot",
-  "YandexBot",
-  "Applebot",
-  "DuckDuckBot",
-  "facebookexternalhit",
-  "Twitterbot",
-  "TelegramBot",
-  "WhatsApp",
-  "Viber",
-];
-
-/**
- * Assistant crawlers are ALLOWED. For a local trade business, being quotable in
- * an answer to "cine montează gresie în Chișinău" is upside with a referral path.
- * Note: Google-Extended controls AI training only — it has no effect on Search
- * indexing or ranking in either direction.
- */
-const AI_AGENTS = [
-  "GPTBot",
-  "OAI-SearchBot",
-  "ChatGPT-User",
-  "ClaudeBot",
-  "PerplexityBot",
-  "Google-Extended",
-  "Applebot-Extended",
-  "meta-externalagent",
-  "Amazonbot",
-];
 
 export default function robots(): MetadataRoute.Robots {
   if (!INDEXABLE) {
@@ -75,22 +60,25 @@ export default function robots(): MetadataRoute.Robots {
 
   return {
     rules: [
-      {
-        userAgent: "*",
-        allow: "/",
-        // Never /_next/static or /_next/image: Google must fetch CSS, JS and
-        // images to render the page, and blocking them breaks mobile-friendly
-        // evaluation and Core Web Vitals attribution.
-        disallow: ["/api/", "/*?*"],
-      },
-      ...ALLOWED_AGENTS.map((userAgent) => ({ userAgent, allow: "/" })),
-      ...AI_AGENTS.map((userAgent) => ({ userAgent, allow: "/" })),
-      // Crawl-delay only under Bingbot: Googlebot has never supported it and
+      // One permissive group for everyone not named below.
+      //
+      // No `Disallow` entries at all: `/api/` does not exist, and `/*?*` would
+      // block every ?gclid= / ?fbclid= landing the day ads or a Facebook share
+      // start — an own goal. Never /_next/static or /_next/image either: Google
+      // must fetch CSS, JS and images to render the page, and blocking them
+      // breaks mobile-friendly evaluation and Core Web Vitals attribution.
+      { userAgent: "*", allow: "/" },
+
+      // Crawl-delay only under Bingbot. Googlebot has never supported it, and
       // Yandex deprecated it in favour of its Webmaster crawl-rate setting.
+      // ALLOWED_AGENTS and AI_AGENTS are documented below but NOT emitted as
+      // their own groups: under RFC 9309 a named group replaces the "*" group
+      // entirely, so an `Allow: /` group per agent would silently discard any
+      // future site-wide rule for exactly the crawlers that matter most.
       { userAgent: "Bingbot", allow: "/", crawlDelay: 10 },
+
       ...SEO_TOOL_BOTS.map((userAgent) => ({ userAgent, disallow: "/" })),
     ],
     sitemap: absoluteUrl("/sitemap.xml"),
-    host: undefined,
   };
 }

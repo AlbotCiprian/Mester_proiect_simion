@@ -142,6 +142,7 @@ export const baie: JourneyChapter = {
     { value: "—", label: "zile execuție", confirm: CONFIRM },
   ],
   cta: { label: "Cere estimare pentru baie", href: "#contact" },
-  attribution:
-    "Fotografii din lucrările proprii, la fața locului. Locația, suprafața și data rămân de confirmat (CONFIRM_OWNER).",
+  // Visitor-facing caption. States only what is true and verifiable today; the
+  // locality/surface/date remain unconfirmed and are therefore simply not claimed.
+  attribution: "Fotografii din lucrările noastre, făcute la fața locului.",
 };

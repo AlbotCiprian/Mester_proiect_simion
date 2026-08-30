@@ -57,8 +57,7 @@ export function JourneyStatic() {
           <aside className="rounded-sm border border-line-strong bg-canvas-raised p-6 sm:p-7">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-bronze-deep">Preț orientativ</p>
             <p className="mt-2 text-2xl font-semibold text-ink">
-              {price.from === null ? "La cerere" : `de la ${price.from} ${price.unit}`}{" "}
-              <span className="align-middle text-xs font-normal text-muted">(CONFIRM_OWNER)</span>
+              {price.from === null ? "La cerere" : `de la ${price.from} ${price.unit}`}
             </p>
             <p className="mt-1 text-xs text-muted">Include: {price.includes.join(", ")}.</p>
             <p className="mt-1 text-xs text-muted">Evaluarea finală depinde de suprafață și condiții.</p>

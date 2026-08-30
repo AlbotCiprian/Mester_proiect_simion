@@ -213,8 +213,7 @@ export default function ScrollJourney() {
 
               <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-bronze-light">Preț orientativ</p>
               <p className="mt-1 text-xl font-semibold text-canvas">
-                {price.from === null ? "La cerere" : `de la ${price.from} ${price.unit}`}{" "}
-                <span className="text-xs font-normal text-canvas/60">(CONFIRM_OWNER)</span>
+                {price.from === null ? "La cerere" : `de la ${price.from} ${price.unit}`}
               </p>
               <p className="mt-1 text-xs text-canvas/65">Include: {price.includes.join(", ")}.</p>
 

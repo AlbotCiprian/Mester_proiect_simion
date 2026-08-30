@@ -17,7 +17,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
             <p className="font-display text-2xl font-semibold">{site.name}</p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-canvas/70">{site.tagline}.</p>
             <p className="mt-4 text-sm text-canvas/55">
-              {site.serviceArea} · <span className="text-bronze-light">CONFIRM_OWNER</span>
+              {site.serviceArea}
             </p>
           </div>
 
@@ -52,7 +52,9 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         </div>
 
         <div className="mt-14 flex flex-col gap-4 border-t border-canvas/15 pt-6 text-xs text-canvas/55 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} {site.name}. Toate datele de business sunt provizorii (CONFIRM_OWNER).</p>
+          <p>
+            © {new Date().getFullYear()} {site.name}
+          </p>
           <ul className="flex flex-wrap gap-5">
             {legal.map((item) => (
               <li key={item.label}>

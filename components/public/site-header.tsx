@@ -77,7 +77,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </div>
 
           <div className="hidden sm:block">
-            <Button href="#contact" variant="bronze">
+            <Button href={navHref(locale, "#contact")} variant="bronze">
               Cere o estimare
             </Button>
           </div>

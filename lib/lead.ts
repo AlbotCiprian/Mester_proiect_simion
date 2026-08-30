@@ -6,47 +6,38 @@
 
 import { z } from "zod";
 
-export const contactPreferences = ["telefon", "whatsapp", "viber", "telegram", "email"] as const;
-export type ContactPreference = (typeof contactPreferences)[number];
+// Plain constants and result types live in lib/lead-labels.ts, which imports no
+// zod — that is what keeps zod out of the client bundle. Re-exported here so the
+// server side has one import site.
+export {
+  contactPreferences,
+  contactPreferenceLabels,
+  leadServiceSlugs,
+  leadServiceLabels,
+} from "@/lib/lead-labels";
+export type {
+  ContactPreference,
+  LeadServiceSlug,
+  LeadFieldKey,
+  LeadFieldErrors,
+  LeadResult,
+} from "@/lib/lead-labels";
 
-export const contactPreferenceLabels: Record<ContactPreference, string> = {
-  telefon: "Apel telefonic",
-  whatsapp: "WhatsApp",
-  viber: "Viber",
-  telegram: "Telegram",
-  email: "E-mail",
-};
-
-/**
- * Explicit tuple, NOT derived from `services.map(...)`. A spread of a mapped
- * array widens to `string[]`, which silently kills exhaustiveness checking the
- * day a service slug is renamed. These must be kept in step with lib/content.ts
- * by hand — the test suite asserts they match.
- */
-export const leadServiceSlugs = [
-  "gresie-faianta",
-  "renovari-bai",
-  "teracota-sobe",
-  "placari-exterioare",
-  "altceva",
-] as const;
-export type LeadServiceSlug = (typeof leadServiceSlugs)[number];
-
-export const leadServiceLabels: Record<LeadServiceSlug, string> = {
-  "gresie-faianta": "Montaj gresie și faianță",
-  "renovari-bai": "Renovare de baie la cheie",
-  "teracota-sobe": "Teracotă și plăci ceramice",
-  "placari-exterioare": "Placări exterioare și terase",
-  altceva: "Altceva / nu sunt sigur",
-};
+import { contactPreferences, leadServiceSlugs } from "@/lib/lead-labels";
+import type { LeadFieldErrors } from "@/lib/lead-labels";
 
 /**
  * Control characters, bidi overrides and zero-width marks. Stripped from every
  * free-text field: they are never legitimate in a name or a locality, they can
  * disguise a string's real content, and `name.min(2)` would otherwise accept
  * two zero-width spaces as a valid name.
+ *
+ * TAB, LF and CR are deliberately EXCLUDED. They are ordinary whitespace, and
+ * deleting them outright fused the words in every multi-line message. They are
+ * folded to a single space by cleanLine(), and preserved by the message field.
  */
-const INVISIBLE = /[\u0000-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
+const INVISIBLE =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
 
 function clean(value: string): string {
   return value.normalize("NFC").replace(INVISIBLE, "").trim();
@@ -143,7 +134,9 @@ export const leadSchema = z
 
     message: z
       .string()
-      .transform((v) => clean(v).replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n"))
+      // Newlines survive here: this is the only place the visitor describes the
+      // job, and paragraph breaks are how people write out a room.
+      .transform((v) => clean(v).replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n"))
       .refine((v) => v.length <= 1500, M.messageLong)
       .optional(),
 
@@ -160,26 +153,6 @@ export const leadSchema = z
 
 export type LeadInput = z.input<typeof leadSchema>;
 export type Lead = z.output<typeof leadSchema>;
-
-/**
- * Field-keyed errors. `_form` catches cross-field issues that carry no path —
- * without it a failed refine yields an empty error map and the form silently
- * rejects while rendering nothing.
- */
-export type LeadFieldErrors = Partial<Record<keyof LeadInput | "_form", string>>;
-
-export type LeadResult =
-  | { status: "success"; reference: string }
-  /** Validation failed. The form re-renders with per-field messages. */
-  | { status: "invalid"; errors: LeadFieldErrors }
-  /** Accepted-looking but throttled. Deliberately vague to the client. */
-  | { status: "rate_limited" }
-  /**
-   * We could not hand the request to anyone. NEVER dress this up as success:
-   * with no database, an undelivered lead is a lost customer, so the UI must
-   * fall back to the phone number.
-   */
-  | { status: "undelivered" };
 
 export function fieldErrorsFrom(error: z.ZodError<unknown>): LeadFieldErrors {
   const out: LeadFieldErrors = {};

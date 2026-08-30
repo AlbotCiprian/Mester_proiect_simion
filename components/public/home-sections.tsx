@@ -121,14 +121,20 @@ function Flagship() {
               </div>
             </dl>
 
-            <ul className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
-              {flagship.metrics.map((m) => (
-                <li key={m.label}>
-                  <p className="font-display tabular text-2xl font-semibold text-ink">{m.value}</p>
-                  <p className="text-xs text-muted">{m.label}</p>
-                </li>
-              ))}
-            </ul>
+            {/* Data-gated like trustFacts (D-011): a metric whose value is a
+                placeholder renders nothing rather than an em-dash under a label. */}
+            {flagship.metrics.some((m) => m.value && m.value !== "—") ? (
+              <ul className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
+                {flagship.metrics
+                  .filter((m) => m.value && m.value !== "—")
+                  .map((m) => (
+                    <li key={m.label}>
+                      <p className="font-display tabular text-2xl font-semibold text-ink">{m.value}</p>
+                      <p className="text-xs text-muted">{m.label}</p>
+                    </li>
+                  ))}
+              </ul>
+            ) : null}
           </div>
         </div>
       </Container>
@@ -234,9 +240,6 @@ function Portfolio() {
           title="Lucrări reale ale atelierului"
           intro="Proiecte fotografiate la fața locului — de la pregătire și hidroizolație până la finisaj."
         />
-        <p className="mt-4 text-xs text-bronze-deep">
-          Detaliile fiecărui proiect (locație, suprafață, dată) se confirmă cu proprietarul (CONFIRM_OWNER).
-        </p>
 
         {/* Featured before/after — the strongest proof story, accessible side-by-side. */}
         {featured && featured.before && featured.beforeAlt ? (

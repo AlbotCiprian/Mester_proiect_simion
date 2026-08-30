@@ -35,7 +35,20 @@ const MAX_FIELD_BYTES = 4000;
 /** Window in which an identical resubmission is treated as the same request. */
 const IDEMPOTENCY_MS = 120_000;
 
-const seenRecently = new Map<string, number>();
+/**
+ * Fingerprint -> the outcome that was actually achieved. Only DELIVERED requests
+ * are recorded, which is the whole point: an earlier version registered the
+ * fingerprint before attempting delivery and never rolled it back, so a visitor
+ * whose lead failed and who pressed Submit again was told "Cererea a plecat" for
+ * a lead nobody ever received. With no datastore that is permanent, silent
+ * customer loss — exactly what the `undelivered` state exists to prevent.
+ *
+ * The residual risk is the reverse and is much cheaper: two submissions racing
+ * in the same instant can both send, producing a duplicate email. The client
+ * disables the button while the action is pending, and a duplicate email costs
+ * nothing next to a lost customer.
+ */
+const delivered = new Map<string, { at: number; result: LeadResult }>();
 
 function reference(): string {
   return randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
@@ -43,17 +56,19 @@ function reference(): string {
 
 /**
  * Same visitor, same phone, same service, inside two minutes = one request.
- * This is what makes a double-click and a no-JS refresh-resubmit safe without a
- * datastore. Keyed on an HMAC so no phone number is held in memory.
+ * Replays the original outcome so a double-click or a no-JS refresh-resubmit
+ * does not send twice. Keyed on an HMAC, so no phone number is held in memory.
  */
-function isDuplicate(fingerprint: string): boolean {
+function recallDelivered(fingerprint: string): LeadResult | null {
   const now = Date.now();
-  for (const [key, at] of seenRecently) {
-    if (at + IDEMPOTENCY_MS <= now) seenRecently.delete(key);
+  for (const [key, entry] of delivered) {
+    if (entry.at + IDEMPOTENCY_MS <= now) delivered.delete(key);
   }
-  if (seenRecently.has(fingerprint)) return true;
-  seenRecently.set(fingerprint, now);
-  return false;
+  return delivered.get(fingerprint)?.result ?? null;
+}
+
+function rememberDelivered(fingerprint: string, result: LeadResult): void {
+  delivered.set(fingerprint, { at: Date.now(), result });
 }
 
 export async function submitLead(_prev: LeadResult | null, formData: FormData): Promise<LeadResult> {
@@ -70,7 +85,7 @@ export async function submitLead(_prev: LeadResult | null, formData: FormData): 
 
   // 1) Honeypot. A real browser never fills a field it cannot see. Answer as if
   //    everything went fine so a scripted submitter learns nothing.
-  if (typeof raw.website === "string" && raw.website.trim() !== "") {
+  if (typeof raw.website === "string" && raw.website !== "") {
     return { status: "success", reference: ref };
   }
 
@@ -107,15 +122,15 @@ export async function submitLead(_prev: LeadResult | null, formData: FormData): 
     return { status: "rate_limited" };
   }
 
-  // 6) Idempotency. A repeat inside the window reports the same outcome the
-  //    first one did, without sending a second email.
+  // 6) Idempotency. A repeat inside the window replays the outcome of a request
+  //    that genuinely reached the owner. A request that FAILED is deliberately
+  //    not recorded, so pressing Submit again actually retries it.
   const secret = process.env.LEAD_FORM_SECRET ?? "dev-secret-not-secret";
   const fingerprint = createHmac("sha256", secret)
     .update(`${ipKey}|${parsed.data.phone}|${parsed.data.service}`)
     .digest("base64url");
-  if (isDuplicate(fingerprint)) {
-    return { status: "success", reference: ref };
-  }
+  const replay = recallDelivered(fingerprint);
+  if (replay) return replay;
 
   // 7) Global ceiling: past this the instance stops spending on Resend.
   if (!rateLimit("lead:instance", INSTANCE_LIMIT, WINDOW_MS).ok) {
@@ -143,8 +158,11 @@ export async function submitLead(_prev: LeadResult | null, formData: FormData): 
   if (outcome !== "sent") {
     // No datastore means an undelivered lead is simply gone. Say so, and let the
     // UI hand the visitor the phone number instead of a fake confirmation.
+    // Deliberately NOT remembered, so a retry is a real retry.
     return { status: "undelivered" };
   }
 
-  return { status: "success", reference: ref };
+  const result: LeadResult = { status: "success", reference: ref };
+  rememberDelivered(fingerprint, result);
+  return result;
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { defaultLocale } from "@/lib/i18n";
+import { site } from "@/lib/content";
 import { SITE_URL, robotsMeta } from "@/lib/seo";
 
 // Self-hosted at build time by next/font. Architectural editorial serif +
@@ -22,12 +23,14 @@ const sans = Manrope({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // Derived from lib/content.ts so renaming the business is a one-file edit.
   title: {
-    default: "Atelier Teracota — placări și renovări de baie",
-    template: "%s · Atelier Teracota",
+    default: `${site.name} — ${site.tagline}`,
+    template: `%s · ${site.name}`,
   },
   description:
-    "Montaj de gresie, faianță și teracotă și renovări complete de baie în Moldova. Previzualizare de design (conținut provizoriu).",
+    "Montaj de gresie și faianță și renovări complete de baie în Chișinău și împrejurimi, " +
+    "documentate cu fotografii din lucrări reale.",
   // One predicate governs indexability, in lib/seo.ts. `undefined` lets Next
   // omit the tag entirely once Gate A closes on the confirmed production host.
   robots: robotsMeta(),

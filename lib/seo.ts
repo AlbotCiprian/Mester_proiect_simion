@@ -1,15 +1,15 @@
 import "server-only";
 
-import { env, isProductionDeployment } from "@/lib/env";
-import { GATE_A_COMPLETE } from "@/lib/content";
-import { defaultLocale, type Locale } from "@/lib/i18n";
+import { env } from "@/lib/env";
+import { GATE_A_COMPLETE, indexabilityFromEnv } from "@/config/indexability.mjs";
+import { defaultLocale, publishedLocales, type Locale } from "@/lib/i18n";
 
 /**
- * The single source of truth for "may a crawler index this?".
+ * Indexability, canonical URLs and the shared metadata helpers.
  *
- * Exactly four consumers: app/layout.tsx (metadata.robots), app/robots.ts,
- * app/sitemap.ts and app/llms.txt/route.ts. Nothing else may branch on
- * VERCEL_ENV for indexability — one predicate, one place.
+ * The predicate itself lives in config/indexability.mjs so that next.config.mjs
+ * — which cannot import TypeScript — decides the X-Robots-Tag header from the
+ * same logic. One predicate, one place.
  */
 
 /** Fallback only. Real deployments set NEXT_PUBLIC_SITE_URL (see .env.example). */
@@ -17,30 +17,25 @@ const FALLBACK_URL = "http://localhost:3000";
 
 export const SITE_URL = (env.siteUrl ?? FALLBACK_URL).replace(/\/+$/, "");
 
-/**
- * The host we are allowed to index under. Until the owner fixes the subdomain
- * (A3) this stays unset, and an unset value keeps INDEXABLE false — a deployment
- * hash hostname must never end up baked into a canonical URL.
- */
-const CONFIRMED_HOST = process.env.CONFIRMED_PRODUCTION_HOST?.trim();
+const verdict = indexabilityFromEnv(GATE_A_COMPLETE);
 
-function hostMatchesConfirmed(): boolean {
-  if (!CONFIRMED_HOST) return false;
-  try {
-    return new URL(SITE_URL).host === CONFIRMED_HOST;
-  } catch {
-    return false;
-  }
+export const INDEXABLE: boolean = verdict.indexable;
+
+/**
+ * Why the site is or is not indexable. Surfaced at build time because a silent
+ * host mismatch is the highest-probability cutover failure: the build is green,
+ * the deploy succeeds, and the site is invisible with no error anywhere.
+ */
+export const INDEXABLE_REASON: string = verdict.reason;
+
+if (process.env.VERCEL_ENV === "production" && GATE_A_COMPLETE && !verdict.indexable) {
+  // Gate A was deliberately opened but something else disagrees — almost always
+  // the two host variables differing by a scheme, a slash or a capital letter.
+  throw new Error(
+    `[seo] GATE_A_COMPLETE is true on a production deployment but the site would still be noindex: ${verdict.reason}. ` +
+      `Fix NEXT_PUBLIC_SITE_URL / CONFIRMED_PRODUCTION_HOST and redeploy — both are read at BUILD time.`,
+  );
 }
-
-/**
- * Three independent conditions, all required:
- *  1. this is the production deployment, not a preview or a local run;
- *  2. it is served from the host the owner confirmed;
- *  3. Gate A is closed — no CONFIRM_OWNER placeholder is still on screen.
- */
-export const INDEXABLE: boolean =
-  isProductionDeployment() && hostMatchesConfirmed() && GATE_A_COMPLETE;
 
 export function absoluteUrl(path = "/"): string {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
@@ -53,9 +48,14 @@ export function canonicalFor(locale: Locale = defaultLocale, path = ""): string 
 }
 
 /**
- * `robots` for Next metadata. Returns the noindex directive whenever the page
- * must stay out of the index; `undefined` lets Next omit the tag entirely.
+ * `robots` for Next metadata.
+ *
+ * An UNPUBLISHED locale is noindex unconditionally — independent of Gate A.
+ * Otherwise the /ru coming-soon stub (40 words of Romanian) would become
+ * indexable the instant the site opens, competing with the page it stubs for.
  */
-export function robotsMeta() {
+export function robotsMeta(locale?: Locale) {
+  const localeIsPublished = locale ? publishedLocales.includes(locale) : true;
+  if (!localeIsPublished) return { index: false, follow: false };
   return INDEXABLE ? undefined : { index: false, follow: false };
 }

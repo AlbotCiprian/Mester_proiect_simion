@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { track } from "@/lib/analytics";
-import { publicChannels } from "@/lib/content";
+import { navHref, publicChannels } from "@/lib/content";
 
 // Mobile-first conversion bar (spec 06 + 09): max three one-hand actions.
 // Hidden on desktop where the header CTA is always visible.
-export function StickyContactBar() {
+export function StickyContactBar({ locale }: { locale: string }) {
   const phone = publicChannels.find((c) => c.type === "phone");
   // Only a CONFIRMED messenger may claim a channel; otherwise the middle action
   // falls through to the form, which always works.
@@ -48,7 +48,7 @@ export function StickyContactBar() {
         ) : null}
 
         <Link
-          href="#contact"
+          href={navHref(locale, "#contact")}
           className="flex min-h-14 flex-col items-center justify-center gap-0.5 bg-bronze py-2.5 text-canvas-raised"
         >
           <BarIcon path="M10 2.5 12.4 7l5 .7-3.6 3.5.9 5L10 13.8 5.3 16.2l.9-5L2.6 7.7l5-.7Z" />

@@ -1,13 +1,22 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { indexabilityFromEnv } from "./config/indexability.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/**
- * Production = the real deployment. Everything else is noindex at the HEADER
- * level, which a stray inbound link cannot bypass — unlike robots.txt.
- */
 const IS_PROD = process.env.VERCEL_ENV === "production";
+
+/**
+ * The SAME predicate lib/seo.ts uses for the meta tag. Previously this file had
+ * its own condition (VERCEL_ENV !== "production"), which left production-before-
+ * Gate-A protected by `Disallow: /` alone — and a disallowed URL is one whose
+ * noindex Google can never read.
+ *
+ * X-Robots-Tag is emitted whenever the site is not indexable, so the instruction
+ * travels on every response and a stray inbound link cannot bypass it.
+ */
+const { indexable: IS_INDEXABLE, reason: INDEXABILITY_REASON } = indexabilityFromEnv();
+console.log(`[build] indexable=${IS_INDEXABLE} (${INDEXABILITY_REASON})`);
 
 /*
  * 'unsafe-inline' in script-src is a KNOWN, RECORDED GAP, not an oversight.
@@ -55,15 +64,14 @@ const securityHeaders = [
   { key: "Content-Security-Policy-Report-Only", value: csp },
 ];
 
-const environmentHeaders = IS_PROD
-  ? [
-      // Ramp: 300 for 24-48h to prove nothing on the subdomain needs plain HTTP,
-      // then 31536000. NEVER add `preload` — the preload list only accepts apex
-      // domains, so from a subdomain the directive is inert, and acting on it
-      // would force HTTPS on every sibling subdomain, which is not our call.
-      { key: "Strict-Transport-Security", value: "max-age=300" },
-    ]
-  : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
+const environmentHeaders = [
+  // Ramp: 300 for 24-48h to prove nothing on the subdomain needs plain HTTP,
+  // then 31536000. NEVER add `preload` — the preload list only accepts apex
+  // domains, so from a subdomain the directive is inert, and acting on it
+  // would force HTTPS on every sibling subdomain, which is not our call.
+  ...(IS_PROD ? [{ key: "Strict-Transport-Security", value: "max-age=300" }] : []),
+  ...(IS_INDEXABLE ? [] : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]),
+];
 
 /**
  * public/** filenames are NOT content-hashed — `npm run media` republishes to
@@ -93,7 +101,12 @@ const nextConfig = {
     // surface is 30 sources x 16 widths x 100 qualities x 2 formats = 96,000
     // billable transformations, every one constructible from a public URL.
     // Pinned: 30 x 7 x 1 x 2 = 420.
-    qualities: [75],
+    //
+    // 55, not 75: the same `q` is applied to AVIF and WebP, and AVIF q75 sits far
+    // above WebP q75 perceptually. Measured across the gallery at the widths a
+    // 390px phone actually requests: 1,221 KB -> 662 KB, a 46% cut, with the
+    // anti-abuse surface unchanged because it is still a single allowed value.
+    qualities: [55],
     // 30 days, not a year: /_next/image cache keys embed unhashed source paths.
     minimumCacheTTL: 2592000,
     localPatterns: [{ pathname: "/images/**" }, { pathname: "/media/**" }],
