@@ -75,10 +75,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <>
       <JsonLd
         nodes={[
-          organizationSchema(locale),
+          organizationSchema(),
           websiteSchema(locale),
-          webPageSchema(locale, { title: TITLE, description: DESCRIPTION }),
-          servicesItemListSchema(),
+          webPageSchema(locale, { title: TITLE, description: DESCRIPTION, hasPart: `${canonicalFor(locale)}#services` }),
+          servicesItemListSchema(locale),
         ]}
       />
       <HomeSections locale={locale} />

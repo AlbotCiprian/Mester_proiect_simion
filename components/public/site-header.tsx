@@ -30,20 +30,28 @@ export function SiteHeader({ locale }: { locale: Locale }) {
 
   const shell = solid
     ? "site-header--solid border-b border-line/80 bg-canvas/85 backdrop-blur supports-[backdrop-filter]:bg-canvas/70"
-    : "bg-gradient-to-b from-ink/45 to-transparent";
+    : "bg-gradient-to-b from-ink/70 via-ink/40 to-transparent";
   const brand = solid ? "text-ink" : "text-canvas";
-  const navLink = solid ? "text-ink-soft hover:text-ink" : "text-canvas/85 hover:text-canvas";
-  const localeInactive = solid ? "text-muted hover:text-ink" : "text-canvas/70 hover:text-canvas";
+  const navLink = solid ? "text-ink-soft hover:text-ink" : "text-canvas hover:text-canvas";
+  const localeInactive = solid ? "text-muted hover:text-ink" : "text-canvas/90 hover:text-canvas";
   const localeActive = solid ? "bg-ink text-canvas" : "bg-canvas text-ink";
-  const menuBtn = solid ? "border-line-strong text-ink" : "border-canvas/40 text-canvas";
+  const menuBtn = solid ? "border-line-strong text-ink" : "border-canvas/60 text-canvas";
+  // bronze-light is 2.15:1 on the solid header's canvas — a fail. bronze-deep is
+  // 5.94:1 there, and bronze-light is 7.49:1 over the ink scrim.
+  const descriptor = solid ? "text-bronze-deep" : "text-bronze-light";
 
   return (
     <header className={`transition-colors duration-300 ${shell}`}>
       <div className="mx-auto flex max-w-[78rem] items-center justify-between gap-6 px-5 py-4 sm:px-8 lg:px-10">
         <Link href={`/${locale}`} className="group flex items-baseline gap-2" aria-label={site.name}>
           <span className={`font-display text-xl font-semibold tracking-tight ${brand}`}>{site.name}</span>
-          <span className="hidden text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-bronze-light sm:inline">
-            Ceramică
+          {/* Always visible, including on phones: "SemiDom" is abstract and
+              carries no meaning without it. Sourced from lib/content.ts so the
+              wordmark cannot drift from the brand definition. */}
+          <span
+            className={`text-[0.58rem] font-semibold uppercase tracking-[0.16em] sm:text-[0.62rem] sm:tracking-[0.2em] ${descriptor}`}
+          >
+            {site.descriptorShort}
           </span>
         </Link>
 

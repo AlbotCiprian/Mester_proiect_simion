@@ -35,13 +35,19 @@ export function CinematicHero({ locale }: { locale: Locale }) {
           Nothing is emitted when the rights gate is closed: the previous version
           fell back to heroMedia.desktopPoster, which leaked the gated URL. */}
       {media ? (
+        // Order matters: the first matching <source> wins, so the mobile pair
+        // must precede the desktop pair, and AVIF must precede WebP within each.
+        // `decoding` is deliberately NOT "async" — this is the LCP element and
+        // async permits the browser to defer the decode past first paint.
         <picture>
-          <source media="(max-width: 767px)" srcSet={media.mobilePoster} />
+          <source media="(max-width: 767px)" type="image/avif" srcSet={media.mobilePoster.avif} />
+          <source media="(max-width: 767px)" type="image/webp" srcSet={media.mobilePoster.webp} />
+          <source type="image/avif" srcSet={media.desktopPoster.avif} />
+          <source type="image/webp" srcSet={media.desktopPoster.webp} />
           <img
-            src={media.desktopPoster}
+            src={media.desktopPoster.webp}
             alt={media.posterAlt}
             fetchPriority="high"
-            decoding="async"
             style={
               {
                 "--hero-pos-desktop": media.desktopObjectPosition,

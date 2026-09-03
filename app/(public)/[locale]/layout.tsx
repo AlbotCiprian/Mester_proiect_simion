@@ -44,7 +44,7 @@ export default async function PublicLayout({
       <SiteFooter locale={locale as Locale} />
       <StickyContactBar locale={locale} />
       {/* Spacer so the mobile sticky bar never covers footer content. */}
-      <div aria-hidden="true" className="h-16 lg:hidden" />
+      <div aria-hidden="true" className="h-16 bg-ink lg:hidden" />
     </>
   );
 }

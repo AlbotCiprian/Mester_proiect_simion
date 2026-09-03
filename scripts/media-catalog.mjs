@@ -162,8 +162,11 @@ export const walkthrough = {
 export const heroStills = {
   outDir: "public/media/hero",
   source: `${OUT_DIR}/baie-cada-placata/01-cada-placata-ansamblu.jpg`, // 960x1280
-  desktop: { file: "hero-cada-placata-desktop.webp", width: 1600, height: 900, focalY: 0.55 },
-  mobile: { file: "hero-cada-placata-mobile.webp", width: 720, height: 1280, focalY: 0.5 },
+  // Each variant emits AVIF and WebP. AVIF is listed first in the <picture>, so
+  // a browser that supports it never downloads the WebP. The hero is the LCP
+  // element and the only image on the critical path.
+  desktop: { base: "hero-cada-placata-desktop", width: 1600, height: 900, focalY: 0.55 },
+  mobile: { base: "hero-cada-placata-mobile", width: 720, height: 1280, focalY: 0.5 },
   alt: "Cadă zidită și placată integral cu plăci aspect marmură, cu muchii tăiate la 45°.",
 };
 

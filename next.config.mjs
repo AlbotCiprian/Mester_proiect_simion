@@ -102,11 +102,17 @@ const nextConfig = {
     // billable transformations, every one constructible from a public URL.
     // Pinned: 30 x 7 x 1 x 2 = 420.
     //
-    // 55, not 75: the same `q` is applied to AVIF and WebP, and AVIF q75 sits far
-    // above WebP q75 perceptually. Measured across the gallery at the widths a
-    // 390px phone actually requests: 1,221 KB -> 662 KB, a 46% cut, with the
-    // anti-abuse surface unchanged because it is still a single allowed value.
-    qualities: [55],
+    // 65, not 75: the same `q` applies to AVIF and WebP, and AVIF q75 sits well
+    // above WebP q75 perceptually. Measured on the real gallery at the widths a
+    // 390px DPR-2 phone requests: q75 = 655 KB, q65 = 402 KB, q55 = 251 KB.
+    //
+    // 65 rather than 55 because 55 visibly smeared the marble veining on
+    // baie-cada-placata/01 and /02 (47% detail retention, PSNR 33.4 dB — below
+    // the ~36 dB usually treated as artefact-free), and at DPR 2 the 828px
+    // decode displays near 1:1. Every gallery image is lazy, so the extra
+    // ~151 KB never touches LCP, and for a tile setter the photographs are the
+    // product. The anti-abuse surface is unchanged: still one allowed value.
+    qualities: [65],
     // 30 days, not a year: /_next/image cache keys embed unhashed source paths.
     minimumCacheTTL: 2592000,
     localPatterns: [{ pathname: "/images/**" }, { pathname: "/media/**" }],
@@ -118,10 +124,12 @@ const nextConfig = {
     serverActions: {
       // The 1MB default is absurd for a text form; the schema's maxima sum to <4KB.
       bodySizeLimit: "64kb",
-      // allowedOrigins is deliberately OMITTED until the final host is decided.
-      // Next still compares Origin against Host. Pin it the moment the subdomain
-      // is fixed: on a shared parent domain it is what stops a compromised
-      // SIBLING subdomain of xelacktech.com being used as a launch point.
+      // Next already compares Origin against Host, so this is defence in depth —
+      // but the site lives on a SHARED parent domain, and this is specifically
+      // what stops a compromised sibling of xelacktech.com being used as a
+      // launch point against the lead endpoint. Same-origin stays allowed, so
+      // preview deployments keep working.
+      allowedOrigins: ["semidom.xelacktech.com"],
     },
   },
 

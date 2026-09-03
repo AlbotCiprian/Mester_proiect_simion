@@ -94,12 +94,16 @@ export { GATE_A_COMPLETE } from "@/config/indexability.mjs";
 export const site = {
   name: "SemiDom",
   shortName: "SemiDom",
-  /** Descriptor shown beside the wordmark and used as the title suffix. */
+  /**
+   * Long form, for prose and metadata.
+   * "SemiDom" says nothing on its own, so it never appears without one of these.
+   */
   descriptor: "Placări ceramice și renovări de baie",
+  /** Wordmark suffix. Must fit a 0.62rem tracked superscript beside the name. */
+  descriptorShort: "Gresie · Faianță · Baie",
   tagline: "Placări și renovări de baie executate cu precizie",
   // CONFIRM_OWNER: exact localities served (checklist B4).
   serviceArea: "Chișinău și împrejurimi",
-  confirm: CONFIRM,
 };
 
 /**
@@ -148,8 +152,8 @@ export const nav = [
   { label: "Servicii", hash: "#servicii" },
   { label: "Proiecte", hash: "#proiecte" },
   { label: "Proces", hash: "#proces" },
-  { label: "Prețuri", hash: "#preturi" },
-  { label: "Despre", hash: "#despre" },
+  { label: "Cum calculăm", hash: "#preturi" },
+  { label: "Proiect", hash: "#despre" },
   { label: "Contact", hash: "#contact" },
 ];
 
@@ -207,10 +211,12 @@ export const services: Service[] = [
     summary:
       "Lucrări de teracotă și placări ceramice decorative, cu atenție la tipar, ton și aliniere.",
     bullets: ["Selectarea tiparului", "Aliniere pe module", "Detalii de racord curate"],
-    // CONFIRM_OWNER: nu există încă nicio fotografie de teracotă/sobă în materialul
-    // primit. Imaginea de mai jos ilustrează execuția ceramică decorativă (muchii
-    // tăiate la 45°), NU o lucrare de teracotă. Se înlocuiește la prima lucrare
-    // fotografiată — sau serviciul se scoate din grilă dacă nu se mai execută.
+    // Owner confirmed 2026-09-03 that this service IS performed (checklist B2),
+    // so the card stays. What is still missing is a PHOTOGRAPH of it: the image
+    // below shows decorative ceramic execution (mitred 45° edges), NOT terracotta,
+    // and its alt text says so. `imageConfirm` keeps that visible, and Gate A
+    // must not open while it is set — a service claimed in JSON-LD and llms.txt
+    // with no supporting work is exactly what the SEO rules forbid.
     image: "/images/proiecte/baie-cada-placata/02-cada-placata-detaliu-muchii.jpg",
     imageAlt:
       "Detaliu de execuție ceramică: muchie exterioară tăiată la 45°, fără profil metalic, și racord curat la peretele placat.",
@@ -287,9 +293,12 @@ export const processSteps: ProcessStep[] = [
 ];
 
 export const estimator = {
-  kicker: "Estimare orientativă",
-  title: "Află un interval, nu o surpriză",
-  body: "Instrumentul nostru explică factorii care influențează costul — suprafață, tip de placă, pregătirea suportului și complexitatea — și oferă un interval orientativ. Prețul final se stabilește după evaluare.",
+  kicker: "Cum se calculează",
+  title: "Ce influențează costul unei placări",
+  // Describes what actually happens. The previous copy promised "instrumentul
+  // nostru … oferă un interval orientativ" — there is no instrument, the CTA
+  // scrolls to the form, and no interval is shown anywhere.
+  body: "Costul depinde de câțiva factori pe care îi verificăm înainte să dăm un preț: suprafața și geometria încăperii, formatul plăcii, starea suportului și lucrările ascunse — hidroizolație, trasee, nivelări. Îți spunem clar ce intră în preț și ce nu, după ce vedem situația.",
   factors: ["Suprafața și geometria", "Formatul și tipul plăcii", "Starea suportului", "Hidroizolație și instalații"],
   // Label must describe what actually happens: this scrolls to the form, it
   // does not compute anything (spec 06 forbids promising an interaction that

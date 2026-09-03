@@ -29,6 +29,12 @@ import type { Locale } from "@/lib/i18n";
 
 type Json = Record<string, unknown>;
 
+/**
+ * Explicit per locale rather than a ternary: adding "en" to lib/i18n.ts would
+ * otherwise make English pages announce themselves as ru-MD, with no type error.
+ */
+const LANGUAGE_TAG: Record<Locale, string> = { ro: "ro-MD", ru: "ru-MD" };
+
 /** Drop undefined/null/empty values so no hollow property is ever serialised. */
 function compact(input: Json): Json {
   const out: Json = {};
@@ -41,18 +47,23 @@ function compact(input: Json): Json {
 }
 
 /**
- * The organisation. Today the ONLY independently verifiable field is the phone
- * number; `name` is still the working title, so it is emitted but flagged in
- * DECISIONS as changing with A1. Everything else waits for owner confirmation.
+ * The organisation. `name` is confirmed (SemiDom, D-018) and so is `telephone`.
+ * Everything else waits for owner confirmation and is absent until then.
  */
-export function organizationSchema(locale: Locale): Json {
+// Locale-independent: the organisation is one entity across every language.
+export function organizationSchema(): Json {
   return compact({
     "@type": "Organization",
     "@id": `${absoluteUrl("/")}#organization`,
     name: site.name,
-    url: canonicalFor(locale),
+    description: site.descriptor,
+    // Root-scoped, matching the @id. A locale-scoped url on a root-scoped @id
+    // means both locales emit the same node with a different url.
+    url: absoluteUrl("/"),
     telephone: phone.e164,
-    logo: absoluteUrl("/icon.svg"),
+    // `logo` is deliberately absent: /icon.svg is a self-declared placeholder
+    // chosen while the brand was undecided, and this file's own rule is that an
+    // absent property beats a hollow one. Add it with a real raster logo (A2).
     image: absoluteUrl("/media/hero/hero-cada-placata-desktop.webp"),
     // areaServed, address, openingHoursSpecification, priceRange, sameAs,
     // foundingDate: all CONFIRM_OWNER. Absent, not guessed.
@@ -64,22 +75,26 @@ export function websiteSchema(locale: Locale): Json {
     "@type": "WebSite",
     "@id": `${absoluteUrl("/")}#website`,
     name: site.name,
-    url: canonicalFor(locale),
-    inLanguage: locale === "ro" ? "ro-MD" : "ru-MD",
+    url: absoluteUrl("/"),
+    inLanguage: LANGUAGE_TAG[locale],
     publisher: { "@id": `${absoluteUrl("/")}#organization` },
   });
 }
 
-export function webPageSchema(locale: Locale, opts: { path?: string; title: string; description: string }): Json {
+export function webPageSchema(
+  locale: Locale,
+  opts: { path?: string; title: string; description: string; hasPart?: string },
+): Json {
   return compact({
     "@type": "WebPage",
     "@id": `${canonicalFor(locale, opts.path ?? "")}#webpage`,
     url: canonicalFor(locale, opts.path ?? ""),
     name: opts.title,
     description: opts.description,
-    inLanguage: locale === "ro" ? "ro-MD" : "ru-MD",
+    inLanguage: LANGUAGE_TAG[locale],
     isPartOf: { "@id": `${absoluteUrl("/")}#website` },
     about: { "@id": `${absoluteUrl("/")}#organization` },
+    hasPart: opts.hasPart ? { "@id": opts.hasPart } : undefined,
   });
 }
 
@@ -88,9 +103,10 @@ export function webPageSchema(locale: Locale, opts: { path?: string; title: stri
  * which is the one thing spec 18 requires — it makes no offer and states no
  * price, so it needs no owner confirmation.
  */
-export function servicesItemListSchema(): Json {
+export function servicesItemListSchema(locale: Locale): Json {
   return compact({
     "@type": "ItemList",
+    "@id": `${canonicalFor(locale)}#services`,
     name: "Servicii",
     itemListElement: services.map((service, index) => ({
       "@type": "ListItem",

@@ -14,9 +14,15 @@ export interface HeroVideoConfig {
   durationSeconds: number;
 }
 
+/** One breakpoint, in both formats. AVIF is offered first. */
+export interface HeroPoster {
+  avif: string;
+  webp: string;
+}
+
 export interface HeroMediaConfig {
-  desktopPoster: string;
-  mobilePoster: string;
+  desktopPoster: HeroPoster;
+  mobilePoster: HeroPoster;
   /** Describes the frame. The hero image is content, not decoration. */
   posterAlt: string;
   video: HeroVideoConfig | null;
@@ -28,8 +34,8 @@ export interface HeroMediaConfig {
 
 // Only fields safe to ship to the browser. No rightsStatus, no internal source.
 export interface HeroMediaDTO {
-  desktopPoster: string;
-  mobilePoster: string;
+  desktopPoster: HeroPoster;
+  mobilePoster: HeroPoster;
   posterAlt: string;
   desktopObjectPosition: string;
   mobileObjectPosition: string;
@@ -86,8 +92,17 @@ export function toPublicDTO(m: HeroMediaConfig): HeroMediaDTO {
 // a blurred video, and beats keeping the AI-generated placeholder that was here.
 // See docs/work/DECISIONS.md D-006; restoring motion needs a landscape shoot.
 export const heroMedia: HeroMediaConfig = {
-  desktopPoster: "/media/hero/hero-cada-placata-desktop.webp",
-  mobilePoster: "/media/hero/hero-cada-placata-mobile.webp",
+  // AVIF first: measured 72KB vs 108KB desktop, 88KB vs 116KB mobile, at 94%
+  // detail retention. This is the LCP element and the only image on the
+  // critical path, so it is the one place the format actually decides a metric.
+  desktopPoster: {
+    avif: "/media/hero/hero-cada-placata-desktop.avif",
+    webp: "/media/hero/hero-cada-placata-desktop.webp",
+  },
+  mobilePoster: {
+    avif: "/media/hero/hero-cada-placata-mobile.avif",
+    webp: "/media/hero/hero-cada-placata-mobile.webp",
+  },
   posterAlt:
     "Cadă zidită și placată integral cu plăci aspect marmură, cu muchii tăiate la 45° și tipar continuu pe perete.",
   video: null,

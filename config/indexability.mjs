@@ -13,9 +13,15 @@
  * GATE A — the content switch.
  *
  * Flip to `true` ONLY when every one of these is answered and encoded:
- *   A1 brand name shown to customers        A4 legal entity for the privacy notice
- *   B1 exact list of services               B2 teracotă/sobe: yes or no
- *   B4 localities actually served           E1-E3 phone + which messengers exist
+ *   A1 brand name — ANSWERED: SemiDom (D-018)
+ *   A4 legal entity for the privacy notice
+ *   B1 exact list of services
+ *   B2 teracotă — ANSWERED: yes, it is performed. Still needs ONE photograph:
+ *      the card currently carries `imageConfirm: CONFIRM` because the image
+ *      illustrating it is not terracotta, and Gate A must not open while any
+ *      service still carries that flag.
+ *   B4 localities actually served
+ *   E1-E3 phone confirmed + which messengers exist
  *   G1 written right to publish the project photographs
  *
  * plus the fifteen technical preconditions in docs/work/GO-LIVE.md.
