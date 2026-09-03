@@ -1,7 +1,20 @@
-# Go-live runbook — `<label>.xelacktech.com`
+# Go-live runbook — `semidom.xelacktech.com`
 
-Target: Vercel project `mester-teracota-moldova`, custom domain on a subdomain of
-`xelacktech.com`, DNS managed in cPanel.
+Target: Vercel project **`semidom`** (`prj_I4TAUJdBB6MvDSnHA6hdjd49zlPm`), custom
+domain `semidom.xelacktech.com`, DNS managed in cPanel.
+
+> **2026-09-03 — the project is now LINKED to GitHub.** The previous project,
+> `mester-teracota-moldova`, was never connected to the repository: both of its
+> deployments were made directly by an agent (`gitDirty: 1`), so four pushed
+> commits built nothing and it still serves code from `b2171ad`. It has no
+> environment variables and no custom domain, so nothing was lost — **delete it**
+> once you have confirmed `semidom` is the one you want. Every push to `main`
+> now deploys `semidom` automatically.
+>
+> Deployment Protection is currently `all_except_custom_domains`: every
+> `.vercel.app` URL asks for a Vercel login, and only the custom domain will be
+> public. Convenient right now — the owner can review it, nobody else can — but
+> step 4 below is where that choice gets made deliberately.
 
 > **The fact that governs every step below:** every route is build-time static.
 > `INDEXABLE`, `robots.txt`, `sitemap.xml`, `llms.txt` and every `<meta robots>`
@@ -23,8 +36,8 @@ Target: Vercel project `mester-teracota-moldova`, custom domain on a subdomain o
 
    | Variable | Scope | Value |
    | --- | --- | --- |
-   | `NEXT_PUBLIC_SITE_URL` | Production | `https://<label>.xelacktech.com` — no trailing slash |
-   | `CONFIRMED_PRODUCTION_HOST` | Production | `<label>.xelacktech.com` — host only, lowercase |
+   | `NEXT_PUBLIC_SITE_URL` | Production | `https://semidom.xelacktech.com` — no trailing slash |
+   | `CONFIRMED_PRODUCTION_HOST` | Production | `semidom.xelacktech.com` — host only, lowercase |
    | `RESEND_API_KEY` | Production | Preview must have **no** key: a preview deploy must never send mail |
    | `LEAD_FROM_EMAIL` | Production | An address on a domain verified in Resend |
    | `LEAD_TO_EMAIL` | Production | A dedicated mailbox, not a personal inbox |
@@ -36,9 +49,17 @@ Target: Vercel project `mester-teracota-moldova`, custom domain on a subdomain o
    trailing dot), so those cannot silently break it — but `www.` is deliberately
    **not** treated as the same host.
 
-4. **Deployment Protection: ON for Preview, OFF for Production.** `app/robots.ts`
-   assumes this; it is not verifiable from the repo.
-   Verify: open a preview URL in a private window — it must prompt for auth.
+4. **Deployment Protection.** Currently `all_except_custom_domains`, so nothing
+   on a `.vercel.app` URL is publicly reachable. Two valid choices:
+   - **Keep it** until the privacy notice names a data controller (A4). The site
+     collects a phone number, and the notice cannot yet say who is responsible
+     for it. The custom domain stays public either way once attached.
+   - **Switch to `preview` only** if you want to share the `.vercel.app` link now.
+     Safe from an indexing standpoint — `robots.txt` is `Disallow: /` and every
+     response carries `X-Robots-Tag: noindex` — but it is a public URL.
+
+   Verify either way: open a preview URL in a private window and confirm it
+   behaves as you intended.
 
 5. **Redeploy production** and check the still-`.vercel.app` URL:
    - `/robots.txt` → `User-Agent: *` / `Disallow: /`
@@ -85,7 +106,8 @@ Target: Vercel project `mester-teracota-moldova`, custom domain on a subdomain o
     7. Restore TTL to 3600 once stable
 
 12. **Add the `.vercel.app` → subdomain redirect** in Vercel domain settings so
-    the two hosts cannot compete.
+    the two hosts cannot compete. The production aliases today are
+    `semidom.vercel.app` and `semidom-albotciprians-projects.vercel.app`.
 
 ## Phase D — indexing
 
@@ -104,17 +126,20 @@ Engineering — all **done** as of 2026-08-19 unless marked:
 - [x] `/ru` carries `noindex` independently of Gate A
 - [x] Branded 404 at both `/zz` and `/ro/zz`
 - [x] One indexability predicate, shared with the build config, 20 tests (D-013)
-- [ ] `serverActions.allowedOrigins` pinned to the final host (needs the host)
+- [x] `serverActions.allowedOrigins` pinned to `semidom.xelacktech.com`
 - [ ] Turnstile shipped, or the "rate limiting implemented" claim corrected at the gate
 
 Owner — all still **open**:
 
-- [ ] **A1** brand name · **A4** legal entity (renders in the privacy notice)
-- [ ] **B1/B2** exact services, teracotă yes or no · **B4** localities served
+- [x] **A1** brand name — **SemiDom** (D-018)
+- [ ] **A4** legal entity (renders in the privacy notice)
+- [x] **B2** teracotă — yes, it is performed. Still needs ONE photograph before
+      Gate A: the card carries `imageConfirm` and a test blocks the flip.
+- [ ] **B1** exact service list · **B4** localities served
 - [ ] **E1–E3** phone confirmed, which messengers exist · **E4** destination inbox
 - [ ] **G1** written right to publish the project photographs
 - [ ] **G3** manual privacy pass over all 30 stills (faces, documents, plates, identifiable property)
-- [ ] Host decision made explicitly: subdomain kept, or a `.md` domain bought
+- [x] Host decided: `semidom.xelacktech.com` (subdomain kept)
 - [ ] Resend provisioned and a real test lead delivered end to end
 
 ### The flip
