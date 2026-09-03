@@ -16,7 +16,7 @@ function read(name: string): string | undefined {
 
 export const env = {
   resendApiKey: read("RESEND_API_KEY"),
-  /** Verified sender, e.g. "Atelier <contact@domeniu.md>". */
+  /** Verified sender, e.g. "SemiDom <contact@domeniu.md>". */
   leadFromEmail: read("LEAD_FROM_EMAIL"),
   /** Where new requests land — the owner's inbox. */
   leadToEmail: read("LEAD_TO_EMAIL"),

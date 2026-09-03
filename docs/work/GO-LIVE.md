@@ -14,7 +14,7 @@ Target: Vercel project `mester-teracota-moldova`, custom domain on a subdomain o
 
 1. `npm run verify` — typecheck, lint, tests, build. All four must pass.
 2. Apply the brand name (see the table at the end of this file). Commit, push.
-   Verify: `grep -rn "Atelier Teracota" app components lib` returns nothing.
+   Verify: `grep -rn "Atelier Teracota" app components lib` returns nothing. **Done 2026-09-03: the brand is SemiDom.**
 
 ## Phase B — Vercel, before any DNS change
 

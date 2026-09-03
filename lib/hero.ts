@@ -104,7 +104,7 @@ export const heroCta = { primary: "#contact", secondary: "#proiecte" } as const;
 export const heroCopy: Partial<Record<Locale, HeroCopy>> = {
   ro: {
     eyebrow: "Finisaje premium pentru spații care rămân",
-    title: "Teracotă și placări executate cu precizie",
+    title: "Montaj gresie și faianță în Chișinău, executat cu precizie",
     description:
       "Transformăm băi și interioare complete prin pregătire corectă, aliniere atentă și finisaje curate, adaptate fiecărui proiect.",
     primaryCta: "Cere o estimare",

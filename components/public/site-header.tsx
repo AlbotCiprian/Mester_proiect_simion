@@ -43,7 +43,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         <Link href={`/${locale}`} className="group flex items-baseline gap-2" aria-label={site.name}>
           <span className={`font-display text-xl font-semibold tracking-tight ${brand}`}>{site.name}</span>
           <span className="hidden text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-bronze-light sm:inline">
-            Atelier
+            Ceramică
           </span>
         </Link>
 

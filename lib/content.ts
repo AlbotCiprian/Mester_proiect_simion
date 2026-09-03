@@ -84,13 +84,20 @@ export interface Faq {
 // already imports it from lib/content breaks.
 export { GATE_A_COMPLETE } from "@/config/indexability.mjs";
 
+/**
+ * The single source for the brand. Everything else — page titles, the header
+ * wordmark, the footer, llms.txt, JSON-LD, the privacy notice — derives from it.
+ *
+ * `name` is CONFIRMED (owner, 2026-09-03). The legal entity behind it (A4) and
+ * the exact localities (B4) are not, and both still gate indexing.
+ */
 export const site = {
-  // CONFIRM_OWNER: brand name, legal entity and logo are still undecided.
-  // The owner will supply them; everything below is a working title only.
-  name: "Atelier Teracota",
-  shortName: "Atelier Teracota",
+  name: "SemiDom",
+  shortName: "SemiDom",
+  /** Descriptor shown beside the wordmark and used as the title suffix. */
+  descriptor: "Placări ceramice și renovări de baie",
   tagline: "Placări și renovări de baie executate cu precizie",
-  // CONFIRM_OWNER: exact localities served.
+  // CONFIRM_OWNER: exact localities served (checklist B4).
   serviceArea: "Chișinău și împrejurimi",
   confirm: CONFIRM,
 };

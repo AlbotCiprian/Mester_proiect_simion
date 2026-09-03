@@ -15,11 +15,11 @@ Google. Restul se pot completa pe parcurs.
 
 ## Grupa A — Denumire și domeniu **[BLOCHEAZĂ]**
 
-Momentan site-ul apare ca „Atelier Teracota", care e doar un nume de lucru.
+Numele este **SemiDom** (confirmat 03.09.2026). Rămâne de confirmat entitatea juridică.
 
 | # | Întrebare | Exemplu de răspuns |
 |---|---|---|
-| A1 | Cum vrei să se numească firma pe site — numele pe care îl vede clientul? | „Ceramica Pro" / „Atelier Simion" |
+| A1 | ~~Cum vrei să se numească firma pe site?~~ | ✅ **SemiDom** |
 | A2 | Ai deja un logo sau facem unul? | „Am unul, ți-l trimit" |
 | A3 | Confirmi că mergem pe subdomeniu (ex. `teracota.xelacktech.com`) sau cumpărăm un domeniu `.md`? | „Deocamdată subdomeniu" |
 | A4 | Ai firmă înregistrată (SRL / II / patentă) și cum se numește exact? | „II Simion Ion" |
