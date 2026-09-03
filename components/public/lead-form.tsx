@@ -4,14 +4,16 @@ import { useActionState, useEffect, useId, useRef } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { submitLead } from "@/app/actions/lead";
-import { phone } from "@/lib/content";
+import { phone, publicChannels } from "@/lib/content";
 // lib/lead-labels, NOT lib/lead: importing the schema module would pull zod into
 // the client bundle (measured: +19.3 kB brotli) for six plain constants.
 import {
   contactPreferenceLabels,
   contactPreferences,
+  PREFERENCE_CHANNEL,
   leadServiceLabels,
   leadServiceSlugs,
+  type ContactPreference,
   type LeadFieldErrors,
   type LeadResult,
 } from "@/lib/lead-labels";
@@ -32,22 +34,45 @@ import { Arrow } from "@/components/public/ui";
 // resting state (WCAG 2.4.7). Fill and border are darkened so the control has a
 // perceivable boundary against the panel (SC 1.4.11).
 const FIELD =
-  "w-full rounded-xs border bg-ink/40 px-3.5 py-3 text-base text-canvas placeholder:text-canvas/55 " +
-  "transition-colors focus:bg-ink/25";
-const FIELD_OK = "border-canvas/35 focus:border-bronze-light";
+  "w-full rounded-xs border bg-canvas/10 px-3.5 py-3 text-base text-canvas placeholder:text-canvas/60 " +
+  "transition-colors focus:bg-canvas/15";
+const FIELD_OK = "border-canvas/45 focus:border-bronze-light";
 const FIELD_ERR = "border-danger-light focus:border-danger-light";
 const LABEL = "block text-xs font-semibold uppercase tracking-[0.16em] text-canvas/60";
+
+/**
+ * Contact methods the owner has actually confirmed, in the site's own order.
+ * Always non-empty: the phone is confirmed, and a lead form that cannot say how
+ * it will reply is worse than one that offers a single option.
+ */
+const offeredPreferences: ContactPreference[] = (() => {
+  const confirmed = contactPreferences.filter((p) =>
+    publicChannels.some((c) => c.type === PREFERENCE_CHANNEL[p]),
+  );
+  return confirmed.length > 0 ? confirmed : ["telefon"];
+})();
 
 export function LeadForm({ locale }: { locale: string }) {
   const [state, formAction] = useActionState<LeadResult | null, FormData>(submitLead, null);
   const uid = useId();
   const mountedAt = useRef<number>(0);
   const elapsedRef = useRef<HTMLInputElement>(null);
+  const pathRef = useRef<HTMLInputElement>(null);
+  const referrerRef = useRef<HTMLInputElement>(null);
+  const utmRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(false);
 
   useEffect(() => {
     mountedAt.current = Date.now();
+    // Attribution, captured on mount. Read here rather than on the server
+    // because a statically prerendered page has no request context. All three
+    // are untrusted and are reduced to an allowlist in the Server Action.
+    if (pathRef.current) pathRef.current.value = window.location.pathname;
+    if (referrerRef.current) referrerRef.current.value = document.referrer.slice(0, 300);
+    if (utmRef.current) {
+      utmRef.current.value = new URLSearchParams(window.location.search).get("utm_source") ?? "";
+    }
   }, []);
 
   // Move focus to the outcome so a screen reader and a keyboard user both land on
@@ -111,9 +136,10 @@ export function LeadForm({ locale }: { locale: string }) {
 
       {state?.status === "rate_limited" ? (
         <Outcome tone="danger" innerRef={statusRef} live="alert" className="mb-8">
-          <p className="font-display text-xl text-canvas">Prea multe încercări</p>
+          <p className="font-display text-xl text-canvas">Prea multe trimiteri într-un timp scurt</p>
           <p className="mt-3 text-canvas/75">
-            Am primit deja câteva cereri de la tine. Mai încearcă peste câteva minute sau sună la{" "}
+            Formularul limitează numărul de trimiteri, așa că ultima nu a fost procesată. Mai
+            încearcă peste câteva minute sau sună direct la{" "}
             <a className="font-semibold text-bronze-light underline underline-offset-4" href={`tel:${phone.e164}`}>
               {phone.display}
             </a>
@@ -138,13 +164,24 @@ export function LeadForm({ locale }: { locale: string }) {
 
       <form action={formAction} onInput={onFormInput} noValidate className="grid gap-5 sm:grid-cols-2">
         <input type="hidden" name="locale" value={locale} />
-        <input type="hidden" name="sourcePath" value="/#contact" />
+        <input ref={pathRef} type="hidden" name="sourcePath" defaultValue="/" />
+        <input ref={referrerRef} type="hidden" name="referrer" defaultValue="" />
+        <input ref={utmRef} type="hidden" name="utmSource" defaultValue="" />
         <input ref={elapsedRef} type="hidden" name="elapsedMs" defaultValue="" />
 
-        {/* Honeypot. Hidden from people, irresistible to form-filling scripts. */}
-        <div className="sr-only-field" aria-hidden="true">
-          <label htmlFor={`${uid}-website`}>Nu completa acest câmp</label>
-          <input id={`${uid}-website`} name="website" type="text" tabIndex={-1} autoComplete="off" />
+        {/* Honeypot. `hidden`, not merely off-screen: a visually-hidden input is
+            still reachable by password managers, and one filling it would silently
+            discard a real lead. The name avoids every common autofill token for
+            the same reason. */}
+        <div hidden aria-hidden="true">
+          <label htmlFor={`${uid}-confirm-ref`}>Nu completa acest câmp</label>
+          <input
+            id={`${uid}-confirm-ref`}
+            name="confirm_ref"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+          />
         </div>
 
         <Field
@@ -174,21 +211,24 @@ export function LeadForm({ locale }: { locale: string }) {
           <label className={LABEL} htmlFor={`${uid}-service`}>
             Ce ai de făcut <Req />
           </label>
-          <select
-            id={`${uid}-service`}
-            name="service"
-            required
-            defaultValue="renovari-bai"
-            aria-invalid={errors.service ? true : undefined}
-            aria-describedby={errors.service ? `${uid}-service-err` : undefined}
-            className={`${FIELD} ${errors.service ? FIELD_ERR : FIELD_OK} mt-2 appearance-none`}
-          >
-            {leadServiceSlugs.map((slug) => (
-              <option key={slug} value={slug} className="bg-ink text-canvas">
-                {leadServiceLabels[slug]}
-              </option>
-            ))}
-          </select>
+          <div className="relative mt-2">
+            <select
+              id={`${uid}-service`}
+              name="service"
+              required
+              defaultValue="renovari-bai"
+              aria-invalid={errors.service ? true : undefined}
+              aria-describedby={errors.service ? `${uid}-service-err` : undefined}
+              className={`${FIELD} ${errors.service ? FIELD_ERR : FIELD_OK} appearance-none pr-10`}
+            >
+              {leadServiceSlugs.map((slug) => (
+                <option key={slug} value={slug} className="bg-ink text-canvas">
+                  {leadServiceLabels[slug]}
+                </option>
+              ))}
+            </select>
+            <Chevron />
+          </div>
           <FieldError id={`${uid}-service-err`} message={errors.service} />
         </div>
 
@@ -201,23 +241,34 @@ export function LeadForm({ locale }: { locale: string }) {
           error={errors.locality}
         />
 
-        <div>
-          <label className={LABEL} htmlFor={`${uid}-pref`}>
-            Cum preferi să te contactăm
-          </label>
-          <select
-            id={`${uid}-pref`}
-            name="contactPreference"
-            defaultValue="telefon"
-            className={`${FIELD} ${FIELD_OK} mt-2 appearance-none`}
-          >
-            {contactPreferences.map((p) => (
-              <option key={p} value={p} className="bg-ink text-canvas">
-                {contactPreferenceLabels[p]}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Only channels the owner has CONFIRMED. Offering Viber or Telegram
+            while publicChannels hides them everywhere else would promise a reply
+            on a channel that may not exist. With one confirmed channel there is
+            nothing to choose, so the field becomes a hidden input. */}
+        {offeredPreferences.length > 1 ? (
+          <div>
+            <label className={LABEL} htmlFor={`${uid}-pref`}>
+              Cum preferi să te contactăm
+            </label>
+            <div className="relative mt-2">
+              <select
+                id={`${uid}-pref`}
+                name="contactPreference"
+                defaultValue={offeredPreferences[0]}
+                className={`${FIELD} ${FIELD_OK} appearance-none pr-10`}
+              >
+                {offeredPreferences.map((p) => (
+                  <option key={p} value={p} className="bg-ink text-canvas">
+                    {contactPreferenceLabels[p]}
+                  </option>
+                ))}
+              </select>
+              <Chevron />
+            </div>
+          </div>
+        ) : (
+          <input type="hidden" name="contactPreference" value={offeredPreferences[0]} />
+        )}
 
         <Field
           id={`${uid}-email`}
@@ -410,4 +461,20 @@ function unrenderedError(errors: LeadFieldErrors): string | null {
     if (!INLINE_ERROR_KEYS.has(key) && message) return message;
   }
   return null;
+}
+
+/** Replacement affordance for `appearance-none` selects. */
+function Chevron() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-canvas/70"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="m5 7.5 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { publicChannels, nav, navHref, site } from "@/lib/content";
-import type { Locale } from "@/lib/i18n";
+import { defaultLocale, publishedLocales, type Locale } from "@/lib/i18n";
 import { Container } from "@/components/public/ui";
 
 // Only pages that exist. "Cookies" is intentionally absent: the site sets no
@@ -58,7 +58,12 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <ul className="flex flex-wrap gap-5">
             {legal.map((item) => (
               <li key={item.label}>
-                <Link href={`/${locale}${item.path}`} className="transition-colors hover:text-canvas">
+                {/* An unpublished locale has no legal pages, so the link must point
+                    at one that does — otherwise /ru links to a 404. */}
+                <Link
+                  href={`/${publishedLocales.includes(locale) ? locale : defaultLocale}${item.path}`}
+                  className="transition-colors hover:text-canvas"
+                >
                   {item.label}
                 </Link>
               </li>

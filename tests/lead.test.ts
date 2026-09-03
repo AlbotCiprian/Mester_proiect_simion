@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  contactPreferences,
   fieldErrorsFrom,
   leadSchema,
   leadServiceLabels,
   leadServiceSlugs,
   normalizePhone,
 } from "@/lib/lead";
-import { services } from "@/lib/content";
+import { PREFERENCE_CHANNEL } from "@/lib/lead-labels";
+import { channels, services } from "@/lib/content";
 
 const validLead = {
   name: "Ion Popescu",
@@ -102,7 +104,7 @@ describe("leadSchema", () => {
   });
 
   it("rejects a filled honeypot", () => {
-    assert.equal(leadSchema.safeParse({ ...validLead, website: "http://spam" }).success, false);
+    assert.equal(leadSchema.safeParse({ ...validLead, confirm_ref: "http://spam" }).success, false);
   });
 });
 
@@ -133,5 +135,28 @@ describe("service catalogue", () => {
     for (const slug of leadServiceSlugs) {
       assert.equal(typeof leadServiceLabels[slug], "string");
     }
+  });
+});
+
+describe("contact preferences offered by the form", () => {
+  it("maps every preference to a real channel type", () => {
+    // The regression this guards: Channel["type"] is "phone" while the
+    // preference is "telefon". Comparing them directly produced an EMPTY list,
+    // the form posted contactPreference="" and every valid lead was rejected.
+    for (const preference of contactPreferences) {
+      const channelType = PREFERENCE_CHANNEL[preference];
+      assert.equal(typeof channelType, "string");
+      assert.ok(
+        channels.some((c) => c.type === channelType),
+        `no channel declared for preference "${preference}" (expected type "${channelType}")`,
+      );
+    }
+  });
+
+  it("always leaves at least one offerable preference", () => {
+    const confirmed = contactPreferences.filter((p) =>
+      channels.some((c) => c.type === PREFERENCE_CHANNEL[p] && c.confirmed),
+    );
+    assert.ok(confirmed.length > 0, "the form must be able to say how we will reply");
   });
 });

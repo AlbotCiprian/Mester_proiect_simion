@@ -143,7 +143,7 @@ export const leadSchema = z
     consent: z.literal(true, { error: M.consent }),
 
     // Anti-abuse. Enforced silently in app/actions/lead.ts.
-    website: z.string().max(0).optional(), // honeypot — must stay empty
+    confirm_ref: z.string().max(0).optional(), // honeypot — must stay empty
     elapsedMs: z.coerce.number().int().nonnegative().optional(),
   })
   .refine((v) => v.contactPreference !== "email" || Boolean(v.email), {

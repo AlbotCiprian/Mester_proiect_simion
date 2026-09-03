@@ -21,6 +21,16 @@ export default async function PublicLayout({
 
   return (
     <>
+      {/* First focusable element on the page — it must precede the fixed header
+          stack in DOM order, or a keyboard user tabs through the whole header
+          before reaching it. */}
+      <a
+        href="#main"
+        className="sr-only-field focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:h-auto focus:w-auto focus:rounded-xs focus:bg-ink focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-canvas"
+      >
+        Sari la conținut
+      </a>
+
       {/* Fixed top stack so the cinematic hero can sit full-bleed behind a
           transparent header (spec 29 §4). Pages without a hero keep their own
           top padding so content is not hidden under it. */}
@@ -28,14 +38,6 @@ export default async function PublicLayout({
         <PreviewNotice />
         <SiteHeader locale={locale as Locale} />
       </div>
-      {/* Skip link: the first focusable element on every page, so a keyboard
-          user is not walked through the whole header stack on each route. */}
-      <a
-        href="#main"
-        className="sr-only-field focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:h-auto focus:w-auto focus:rounded-xs focus:bg-ink focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-canvas"
-      >
-        Sari la conținut
-      </a>
       <main id="main" tabIndex={-1}>
         {children}
       </main>

@@ -46,8 +46,8 @@ export function Section({
   );
 }
 
-export function Kicker({ children }: { children: ReactNode }) {
-  return <span className="kicker">{children}</span>;
+export function Kicker({ children, tone = "dark" }: { children: ReactNode; tone?: "dark" | "light" }) {
+  return <span className={`kicker ${tone === "light" ? "kicker--light" : ""}`}>{children}</span>;
 }
 
 export function SectionHeading({
@@ -67,7 +67,7 @@ export function SectionHeading({
   const introColor = tone === "light" ? "text-canvas/80" : "text-ink-soft";
   return (
     <div className={`max-w-2xl ${align === "center" ? "mx-auto text-center" : ""}`}>
-      {kicker ? <Kicker>{kicker}</Kicker> : null}
+      {kicker ? <Kicker tone={tone}>{kicker}</Kicker> : null}
       <h2 className={`mt-5 text-display-2 ${titleColor}`}>{title}</h2>
       {intro ? <p className={`mt-5 max-w-xl text-lead ${introColor}`}>{intro}</p> : null}
     </div>

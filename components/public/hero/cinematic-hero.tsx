@@ -89,7 +89,7 @@ export function CinematicHero({ locale }: { locale: Locale }) {
       {/* Scroll hint — real, focusable link (also accessible). */}
       <Link
         href="#servicii"
-        className="absolute inset-x-0 bottom-3 z-10 mx-auto flex w-fit items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-canvas/80 transition-colors hover:text-canvas"
+        className="absolute inset-x-0 bottom-20 z-10 mx-auto flex w-fit items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-canvas/80 transition-colors hover:text-canvas lg:bottom-3"
       >
         {copy.scrollHint}
         <svg viewBox="0 0 16 16" className="scroll-hint-bob h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">

@@ -2,7 +2,8 @@
 
 ## Current phase
 
-Public site P0 complete and deployable. Still `noindex` — blocked on owner data, not on code.
+Public site P0 complete and deployable as a soft-launch. Brand confirmed (SemiDom).
+Still `noindex`: blocked on six owner answers, not on code.
 
 ## Active milestone
 
@@ -16,7 +17,8 @@ Workstream 5 — Public website P0. Lead capture shipped; content pages and RU d
 - Milestone 0 — repository scaffolding and configuration hardening
 - Frontend design prototype — "Precision Atelier" homepage (Workstream 1–2)
 - **Real media integration (2026-08-18)** — every stock/AI/placeholder asset removed
-- **Lead capture, security and SEO surface (2026-08-19)** — see `DECISIONS.md` D-009…D-012
+- **Lead capture, security and SEO surface (2026-08-19)** — see `DECISIONS.md` D-009…D-017
+- **SemiDom brand + post-audit fixes (2026-09-03)** — see `DECISIONS.md` D-018…D-021
 
 ## Media state
 
@@ -53,26 +55,28 @@ re-enabled by data alone once the originals or a proper shoot arrive (checklist 
 | Item | State |
 | --- | --- |
 | Headers | `next.config.mjs` — CSP (Report-Only), nosniff, frame-deny, COOP, Permissions-Policy, HSTS in production, `X-Robots-Tag: noindex` everywhere else. `x-powered-by` off |
-| Image cost | `qualities: [75]` + pinned `deviceSizes`/`imageSizes` cuts the addressable transformation surface from ~96,000 to 420 |
-| Indexability | one predicate, `INDEXABLE` in `lib/seo.ts` |
+| Image cost | `qualities: [55]` + pinned `deviceSizes`/`imageSizes` cuts the addressable transformation surface from ~96,000 to 420 |
+| Indexability | one predicate in `config/indexability.mjs`, shared by `lib/seo.ts` and `next.config.mjs` |
 | robots.txt | `app/robots.ts` — `Disallow: /` until Gate A; then allow-list incl. YandexBot and messenger fetchers, deny SEO-tool crawlers, allow AI assistants |
-| sitemap.xml | `app/sitemap.ts` — published locales only, real `lastModified`, empty until Gate A |
+| sitemap.xml | `app/sitemap.ts` — published locales only, `lastModified` deliberately omitted, empty until Gate A |
 | llms.txt | `app/llms.txt/route.ts` — 404s until Gate A |
-| Tests | `npm test` — 30 assertions over phone normalisation, schema, error mapping, rate limiter, IP handling |
+| Tests | `npm test` — 62 assertions over phone normalisation, schema, error mapping, rate limiter, IP handling |
 
 ## Blockers
 
 Everything below is owner input, not engineering work. Full list, phrased for a
 non-technical owner: **[docs/work/OWNER-DATA-REQUEST.md](OWNER-DATA-REQUEST.md)**.
 
-- **A1/A4** brand name and legal entity — indexing under a name that later changes wastes the first months
+- ~~**A1** brand name~~ — **answered: SemiDom** (D-018). **A4** legal entity still open
 - **B1/B2/B4** exact services, whether teracotă stays, localities served
 - **E1–E4** phone confirmed; which of WhatsApp/Viber/Telegram exist; **the destination inbox**
 - **G1** written right to publish the photographs (sending files is not consent)
 - **G3** manual privacy pass over every still (faces, documents, plates, identifiable property)
 - **T1–T5** `RESEND_API_KEY`, verified sending domain, final subdomain
 
-Until then `GATE_A_COMPLETE` stays `false` in `lib/content.ts` and the site is not indexable.
+Until then `GATE_A_COMPLETE` stays `false` in `config/indexability.mjs` and the site is not
+indexable. `CONTENT_COMPLETE` is a separate, earlier gate that only removes the
+"site în lucru" banner (D-019).
 
 ## Next approved task
 
@@ -86,4 +90,5 @@ service pages (`/ro/servicii/*`) → project case studies → RU locale.
 | 2026-06-23 | Milestone 0 — config & scaffolding | Done | local commit `chore: milestone 0` | owner |
 | 2026-06-24 | Frontend prototype (WS 1–2) | Build green (6/6 static), dev verified | `next build` ok; `/ro` 200, `/`→`/ro` 307, `/ru` notice | owner |
 | 2026-08-18 | Real media integration | Build green; typecheck + eslint clean; desktop + mobile visual pass | `next build`; headless Chrome capture at 1440×900 and 390×844 | owner |
-| 2026-08-19 | Lead capture + security + SEO surface | Build green (9 routes); typecheck, eslint and 30/30 tests clean; form verified with and without JavaScript; headers and robots/sitemap/llms verified over HTTP | `npm run verify`; `curl -I /ro`; Playwright form + no-JS runs | owner |
+| 2026-08-19 | Lead capture + security + SEO surface | Build green (8 routes); typecheck, eslint and 30/30 tests clean; form verified with and without JavaScript; headers and robots/sitemap/llms verified over HTTP | `npm run verify`; `curl -I /ro`; Playwright form + no-JS runs | owner |
+| 2026-09-03 | SemiDom brand + nine-role audit fixes | Build green (8 routes); typecheck, eslint and 62/62 tests clean; form re-verified with and without JavaScript including the retry-after-failure path; brand and placeholder sweep clean on rendered HTML | `npm run verify`; Playwright form/retry/no-JS runs; `curl` route and header probes | owner |

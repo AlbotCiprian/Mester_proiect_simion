@@ -6,6 +6,7 @@ import { leadSchema, fieldErrorsFrom, type LeadResult } from "@/lib/lead";
 import { clientIpFrom, hashIp, rateLimit } from "@/lib/rate-limit";
 import { deliverLead } from "@/lib/notify";
 import { isLocale, defaultLocale } from "@/lib/i18n";
+import { resolveLeadSource, safePath } from "@/lib/lead-source";
 
 /**
  * The only lead endpoint. One door, one set of controls — there is deliberately
@@ -85,7 +86,15 @@ export async function submitLead(_prev: LeadResult | null, formData: FormData): 
 
   // 1) Honeypot. A real browser never fills a field it cannot see. Answer as if
   //    everything went fine so a scripted submitter learns nothing.
-  if (typeof raw.website === "string" && raw.website !== "") {
+  //
+  //    The field is NOT called "website": that is one of the most commonly
+  //    autofilled names in existence, and a password manager filling it would
+  //    silently discard a real lead. It is display:none rather than merely
+  //    off-screen for the same reason. The hit is logged so the false-positive
+  //    rate is observable instead of assumed — this is the last remaining path
+  //    that reports success without delivering anything.
+  if (typeof raw.confirm_ref === "string" && raw.confirm_ref !== "") {
+    console.warn(`[lead:${ref}] honeypot triggered, request discarded`);
     return { status: "success", reference: ref };
   }
 
@@ -117,20 +126,23 @@ export async function submitLead(_prev: LeadResult | null, formData: FormData): 
     return { status: "invalid", errors: fieldErrorsFrom(parsed.error) };
   }
 
-  // 5) Submission budget, charged only for payloads that were actually valid.
-  if (!rateLimit(`lead:submit:${ipKey}`, SUBMIT_LIMIT, WINDOW_MS).ok) {
-    return { status: "rate_limited" };
-  }
-
-  // 6) Idempotency. A repeat inside the window replays the outcome of a request
-  //    that genuinely reached the owner. A request that FAILED is deliberately
-  //    not recorded, so pressing Submit again actually retries it.
+  // 5) Idempotency FIRST. A repeat inside the window replays the outcome of a
+  //    request that genuinely reached the owner. Checked BEFORE the submit
+  //    budget: charging a slot for a replay meant that on a no-JS refresh-resubmit
+  //    the one visitor whose lead HAD arrived was the one told they had tried too
+  //    often. A request that FAILED is deliberately not recorded, so a retry is
+  //    a real retry.
   const secret = process.env.LEAD_FORM_SECRET ?? "dev-secret-not-secret";
   const fingerprint = createHmac("sha256", secret)
     .update(`${ipKey}|${parsed.data.phone}|${parsed.data.service}`)
     .digest("base64url");
   const replay = recallDelivered(fingerprint);
   if (replay) return replay;
+
+  // 6) Submission budget, charged only for payloads that were valid AND new.
+  if (!rateLimit(`lead:submit:${ipKey}`, SUBMIT_LIMIT, WINDOW_MS).ok) {
+    return { status: "rate_limited" };
+  }
 
   // 7) Global ceiling: past this the instance stops spending on Resend.
   if (!rateLimit("lead:instance", INSTANCE_LIMIT, WINDOW_MS).ok) {
@@ -140,10 +152,16 @@ export async function submitLead(_prev: LeadResult | null, formData: FormData): 
 
   const localeParam = typeof raw.locale === "string" && isLocale(raw.locale) ? raw.locale : defaultLocale;
 
+  const source = resolveLeadSource(
+    typeof raw.utmSource === "string" ? raw.utmSource : undefined,
+    typeof raw.referrer === "string" ? raw.referrer : undefined,
+  );
+
   const outcome = await deliverLead(parsed.data, {
     reference: ref,
     locale: localeParam,
-    sourcePath: typeof raw.sourcePath === "string" ? raw.sourcePath.slice(0, 200) : "/",
+    source,
+    sourcePath: safePath(typeof raw.sourcePath === "string" ? raw.sourcePath : undefined),
     consentVersion: process.env.LEAD_CONSENT_VERSION ?? "2026-08-19",
     consentAtIso: new Date().toISOString(),
   });
@@ -151,8 +169,8 @@ export async function submitLead(_prev: LeadResult | null, formData: FormData): 
   // Log the OUTCOME only. Name, phone, e-mail, locality and message never touch
   // the logs (CLAUDE.md: "nu ... loguri cu PII"), and neither does the raw IP.
   console.info(
-    `[lead:${ref}] service=${parsed.data.service} msgBytes=${parsed.data.message?.length ?? 0} ` +
-      `fast=${suspiciouslyFast} delivery=${outcome}`,
+    `[lead:${ref}] service=${parsed.data.service} source=${source} ` +
+      `msgBytes=${parsed.data.message?.length ?? 0} fast=${suspiciouslyFast} delivery=${outcome}`,
   );
 
   if (outcome !== "sent") {

@@ -25,6 +25,20 @@
 export const GATE_A_COMPLETE = false;
 
 /**
+ * Is the business content finished enough to stop warning visitors about it?
+ *
+ * Separate from GATE_A_COMPLETE on purpose. During the soft-launch the site is
+ * deliberately unindexed while the owner shares the link by hand — and a banner
+ * saying the content is provisional is exactly the wrong thing to show the
+ * people he is trying to win. Gate A additionally requires the legal and consent
+ * work; this only asks whether what is on screen is final.
+ *
+ * Flip when: the service list is confirmed (B1/B2), the localities are named
+ * (B4), and the trust figures are either real or permanently removed.
+ */
+export const CONTENT_COMPLETE = false;
+
+/**
  * Strip scheme, credentials, path, query, case and any trailing dot from a host.
  *
  * @param {string | undefined | null} value

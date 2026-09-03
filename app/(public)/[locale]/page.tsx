@@ -30,7 +30,9 @@ export async function generateMetadata({
   // An unpublished locale gets no canonical and no OG card: it is a stub, and
   // advertising it as a page is what would make it compete with the real one.
   if (!publishedLocales.includes(locale)) {
-    return { title: site.name, robots: robotsMeta(locale) };
+    // `absolute` so the root template does not append the brand a second time,
+    // which rendered <title>SemiDom · SemiDom</title>.
+    return { title: { absolute: `Русская версия — ${site.name}` }, robots: robotsMeta(locale) };
   }
 
   const url = canonicalFor(locale);

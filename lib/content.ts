@@ -235,7 +235,10 @@ export const flagship = {
   // Descrierea de mai jos spune DOAR ce se vede în fotografii. Locația, suprafața,
   // durata și acordul scris de publicare rămân CONFIRM_OWNER (checklist D.31).
   title: "Cadă zidită și placată integral, cu muchii la 45°",
-  location: "Proiect real · locație de confirmat",
+  // Rendered only when it says something. An empty string is honest; a
+  // placeholder shown to a customer is an internal note on the shop window.
+  location: "", // CONFIRM_OWNER — checklist G2
+
   summary:
     "O cadă zidită și îmbrăcată complet în plăci de format mare, cu muchiile tăiate la 45° și tiparul continuat de pe perete pe corpul căzii.",
   challenge:

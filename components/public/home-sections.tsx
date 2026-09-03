@@ -44,7 +44,7 @@ function Services() {
       <Container>
         <SectionHeading
           kicker="Ce executăm"
-          title="Servicii de placare și renovare"
+          title="Servicii de montaj gresie, faianță și renovări de baie"
           intro="Lucrăm pe câteva direcții clare, fiecare cu standardul ei de pregătire, montaj și verificare."
         />
         <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2">
@@ -103,7 +103,9 @@ function Flagship() {
           <div>
             <Kicker>{flagship.kicker}</Kicker>
             <h2 className="mt-5 text-display-2 text-ink">{flagship.title}</h2>
-            <p className="mt-2 text-sm text-muted">{flagship.location}</p>
+            {flagship.location ? (
+              <p className="mt-2 text-sm text-muted">{flagship.location}</p>
+            ) : null}
             <p className="mt-5 text-base leading-relaxed text-ink-soft">{flagship.summary}</p>
 
             <dl className="mt-7 space-y-4 border-l border-line-strong pl-5">
@@ -237,7 +239,7 @@ function Portfolio() {
       <Container>
         <SectionHeading
           kicker="Portofoliu"
-          title="Lucrări reale ale atelierului"
+          title="Lucrări executate în Chișinău"
           intro="Proiecte fotografiate la fața locului — de la pregătire și hidroizolație până la finisaj."
         />
 
@@ -306,7 +308,7 @@ function Portfolio() {
                 <span className="absolute left-3 top-3 rounded-xs bg-canvas/90 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-ink">
                   {p.category}
                 </span>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent p-4">
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/95 via-ink/75 to-transparent p-4 pt-16">
                   <p className="font-display text-base leading-tight text-canvas sm:text-lg">{p.title}</p>
                   <p className="mt-0.5 text-[0.7rem] text-canvas/75">{p.type}</p>
                 </div>

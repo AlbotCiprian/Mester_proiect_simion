@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { isLocale, publishedLocales, type Locale } from "@/lib/i18n";
+import { isLocale, publishedLocales } from "@/lib/i18n";
 import { canonicalFor, robotsMeta } from "@/lib/seo";
 import { phone, site } from "@/lib/content";
 import { Container, Kicker } from "@/components/public/ui";
@@ -24,12 +24,13 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  if (!isLocale(locale)) return {};
   return {
     title: "Politica de confidențialitate",
     description:
       "Ce date colectăm prin formularul de contact, în ce scop, cine le procesează și cât timp le păstrăm.",
-    alternates: { canonical: canonicalFor(locale as Locale, "/confidentialitate") },
-    robots: robotsMeta(),
+    alternates: { canonical: canonicalFor(locale, "/confidentialitate") },
+    robots: robotsMeta(locale),
   };
 }
 

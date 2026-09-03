@@ -13,6 +13,20 @@
 export const contactPreferences = ["telefon", "whatsapp", "viber", "telegram", "email"] as const;
 export type ContactPreference = (typeof contactPreferences)[number];
 
+/**
+ * Contact preference -> the Channel["type"] that has to be confirmed before we
+ * may offer it. The two vocabularies differ ("telefon" vs "phone"), and matching
+ * them by string equality silently yields an empty list — which posts an empty
+ * contactPreference and rejects every lead. Bound by a test.
+ */
+export const PREFERENCE_CHANNEL: Record<ContactPreference, string> = {
+  telefon: "phone",
+  whatsapp: "whatsapp",
+  viber: "viber",
+  telegram: "telegram",
+  email: "email",
+};
+
 export const contactPreferenceLabels: Record<ContactPreference, string> = {
   telefon: "Apel telefonic",
   whatsapp: "WhatsApp",
@@ -53,7 +67,7 @@ export type LeadFieldKey =
   | "locality"
   | "message"
   | "consent"
-  | "website"
+  | "confirm_ref"
   | "elapsedMs"
   | "_form";
 

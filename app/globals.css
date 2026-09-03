@@ -105,7 +105,14 @@
   p { text-wrap: pretty; }
 
   /* Offset in-page anchors so targets clear the fixed header (spec 29 §4). */
-  [id] { scroll-margin-top: 5.5rem; }
+  /* Must clear the fixed stack (preview notice + header): measured 113px on
+     desktop and 132px on mobile. At the old 5.5rem every in-page anchor landed
+     26-44px too high and hid the section's own kicker behind the header. */
+  [id] { scroll-margin-top: 8.5rem; }
+
+  @media (min-width: 640px) {
+    [id] { scroll-margin-top: 7.25rem; }
+  }
 
   ::selection {
     background-color: var(--color-bronze);
@@ -145,6 +152,15 @@
     width: 1.75rem;
     height: 1px;
     background-color: var(--color-line-strong);
+  }
+
+  /* On an ink section, bronze-deep is 2.72:1 — a fail. bronze-light is 7.49:1.
+     Use this instead of overriding the colour with !important at the call site. */
+  .kicker--light {
+    color: var(--color-bronze-light);
+  }
+  .kicker--light::before {
+    background-color: var(--color-canvas-soft, rgb(246 242 234 / 0.35));
   }
 
   /* Ceramic-joint grid: subtle module lines on a surface */

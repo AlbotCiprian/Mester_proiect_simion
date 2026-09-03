@@ -3,6 +3,7 @@ import "server-only";
 import { Resend } from "resend";
 import { env, leadDeliveryConfigured } from "@/lib/env";
 import { contactPreferenceLabels, leadServiceLabels, type Lead } from "@/lib/lead";
+import { LEAD_SOURCE_LABELS, type LeadSource } from "@/lib/lead-source";
 
 /**
  * Lead delivery. Email only — the owner decided against a datastore at P0
@@ -18,6 +19,8 @@ export interface LeadMeta {
   locale: string;
   /** Page the request came from, for context in the email. */
   sourcePath: string;
+  /** Which channel produced this lead, reduced to a closed allowlist. */
+  source: LeadSource;
   /**
    * Consent must be demonstrable. With no datastore, this outbound email is the
    * ONLY record that consent was given, so the version and a server-side UTC
@@ -51,15 +54,22 @@ function escapeHtml(value: string): string {
 function buildRows(lead: Lead, meta: LeadMeta): Array<[string, string]> {
   // lead.phone is already E.164 — the schema transforms it, so no user-typed
   // string reaches this row.
+  // Both formats: the owner searches his mailbox for whatever the caller reads
+  // out, which is the national form, not E.164.
+  const national = lead.phone.startsWith("+373")
+    ? `0${lead.phone.slice(4)}`.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3")
+    : null;
+
   const rows: Array<[string, string]> = [
     ["Nume", lead.name],
-    ["Telefon", lead.phone],
+    ["Telefon", national ? `${lead.phone}  (${national})` : lead.phone],
     ["Preferă contact prin", contactPreferenceLabels[lead.contactPreference]],
     ["Serviciu", leadServiceLabels[lead.service] ?? lead.service],
   ];
   if (lead.email) rows.push(["E-mail", lead.email]);
   if (lead.locality) rows.push(["Localitate", lead.locality]);
   if (lead.message) rows.push(["Detalii", lead.message]);
+  rows.push(["Sursă", LEAD_SOURCE_LABELS[meta.source]]);
   rows.push(["Referință", meta.reference]);
   rows.push(["Pagina", `${meta.locale} · ${meta.sourcePath}`]);
   rows.push(["Acord primit", `${meta.consentAtIso} (versiunea ${meta.consentVersion})`]);
