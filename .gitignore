@@ -38,3 +38,6 @@ Thumbs.db
 # otherwise override the earlier negation.
 .env*
 !.env.example
+
+# Temporary workflow scripts run from the working directory
+.wf-*.js

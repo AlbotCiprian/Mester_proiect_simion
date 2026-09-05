@@ -1,193 +1,286 @@
-# Go-live runbook — `semidom.xelacktech.com`
+# Go-live runbook — `semidom.md`
 
-Target: Vercel project **`semidom`** (`prj_I4TAUJdBB6MvDSnHA6hdjd49zlPm`), custom
-domain `semidom.xelacktech.com`, DNS managed in cPanel.
-
-> **2026-09-03 — the project is now LINKED to GitHub.** The previous project,
-> `mester-teracota-moldova`, was never connected to the repository: both of its
-> deployments were made directly by an agent (`gitDirty: 1`), so four pushed
-> commits built nothing and it still serves code from `b2171ad`. It has no
-> environment variables and no custom domain, so nothing was lost — **delete it**
-> once you have confirmed `semidom` is the one you want. Every push to `main`
-> now deploys `semidom` automatically.
->
-> Deployment Protection is currently `all_except_custom_domains`: every
-> `.vercel.app` URL asks for a Vercel login, and only the custom domain will be
-> public. Convenient right now — the owner can review it, nobody else can — but
-> step 4 below is where that choice gets made deliberately.
-
-> **The fact that governs every step below:** every route is build-time static.
-> `INDEXABLE`, `robots.txt`, `sitemap.xml`, `llms.txt` and every `<meta robots>`
-> are frozen into the build artifact. **Changing an environment variable in the
-> Vercel dashboard does nothing until you redeploy.**
+Target: Vercel project **`semidom`** (`prj_I4TAUJdBB6MvDSnHA6hdjd49zlPm`), linked to
+GitHub `AlbotCiprian/Mester_proiect_simion`, production branch `main`, auto-deploying
+on every push.
 
 ---
 
-## Phase A — repo
+## STOP — do this first
 
-1. `npm run verify` — typecheck, lint, tests, build. All four must pass.
-2. Apply the brand name (see the table at the end of this file). Commit, push.
-   Verify: `grep -rn "Atelier Teracota" app components lib` returns nothing. **Done 2026-09-03: the brand is SemiDom.**
+**Measured 2026-09-05, and it is the one thing that blocks everything else:**
 
-## Phase B — Vercel, before any DNS change
+```console
+$ nslookup -type=SOA semidom.md ns1.vercel-dns.com
+*** Query refused
 
-3. **Environment variables, Production scope only.** Vercel defaults to all
-   environments — narrow each one deliberately.
+$ curl -s "https://dns.google/resolve?name=semidom.md&type=NS"
+status: NXDOMAIN   authority: ns.dns.md
+```
 
-   | Variable | Scope | Value |
-   | --- | --- | --- |
-   | `NEXT_PUBLIC_SITE_URL` | Production | `https://semidom.xelacktech.com` — no trailing slash |
-   | `CONFIRMED_PRODUCTION_HOST` | Production | `semidom.xelacktech.com` — host only, lowercase |
-   | `RESEND_API_KEY` | Production | Preview must have **no** key: a preview deploy must never send mail |
-   | `LEAD_FROM_EMAIL` | Production | An address on a domain verified in Resend |
-   | `LEAD_TO_EMAIL` | Production | A dedicated mailbox, not a personal inbox |
-   | `LEAD_FORM_SECRET` | Production + Preview, different values | Otherwise the HMAC falls back to a public default |
-   | `IP_HASH_SALT` | Production + Preview, different values | Otherwise IP hashing falls back to a public default |
-   | `LEAD_CONSENT_VERSION` | Production | Otherwise every lead is stamped with the build-time default |
+Two facts, and the second one is the trap:
 
-   The host comparison is normalised (scheme, trailing slash, case, credentials,
-   trailing dot), so those cannot silently break it — but `www.` is deliberately
-   **not** treated as the same host.
+1. The `.md` registry has **not yet published** the delegation. TopHost said up to
+   24 hours; that part is just waiting.
+2. **Vercel has no DNS zone for `semidom.md`.** Its nameservers answer *Query
+   refused*, not "no such record".
 
-4. **Deployment Protection.** Currently `all_except_custom_domains`, so nothing
-   on a `.vercel.app` URL is publicly reachable. Two valid choices:
-   - **Keep it** until the privacy notice names a data controller (A4). The site
-     collects a phone number, and the notice cannot yet say who is responsible
-     for it. The custom domain stays public either way once attached.
-   - **Switch to `preview` only** if you want to share the `.vercel.app` link now.
-     Safe from an indexing standpoint — `robots.txt` is `Disallow: /` and every
-     response carries `X-Robots-Tag: noindex` — but it is a public URL.
+So the moment the registry does publish `ns1/ns2.vercel-dns.com`, the domain will
+resolve to **nothing** — no website, no mail, no way to receive anything — until
+the zone exists.
 
-   Verify either way: open a preview URL in a private window and confirm it
-   behaves as you intended.
+**Fix, one minute, do it now:** Vercel dashboard → project `semidom` → Settings →
+Domains → Add → `semidom.md`. Vercel creates the zone, and because the domain is
+already delegated to it, the apex records and the TLS certificate configure
+themselves once propagation lands. Add `www.semidom.md` in the same screen and
+set it to redirect to the apex.
 
-5. **Redeploy production** and check the still-`.vercel.app` URL:
-   - `/robots.txt` → `User-Agent: *` / `Disallow: /`
-   - `/sitemap.xml` → empty `<urlset>`
-   - `/llms.txt` → 404
-   - `/ro` → `<meta name="robots" content="noindex, nofollow">` present
-   - Submit the form once → the email arrives in `LEAD_TO_EMAIL` within 8s.
-   - **Submit the identical form again → it must NOT claim success.**
-   - Repeat once with JavaScript disabled.
+Re-check with:
 
-## Phase C — DNS cutover in cPanel
+```bash
+nslookup -type=SOA semidom.md ns1.vercel-dns.com     # must stop saying "refused"
+curl -s "https://dns.google/resolve?name=semidom.md&type=NS"   # must list vercel-dns
+```
 
-6. **Lower the TTL first.** If a record for `<label>` already exists, set TTL to
-   300 and wait out the old TTL *before* changing the target. Without this, a
-   rollback is gated on the old TTL.
+---
 
-7. **Do not use cPanel's "Subdomains" tool.** It creates a document root *and* an
-   A record pointing at the shared host, which conflicts with the CNAME and
-   serves a cPanel default page. If it already exists, delete the A record for
-   `<label>` in **Zone Editor**.
+## What changed, and why it matters
 
-8. **Add the domain in Vercel first**, then in cPanel → Zone Editor → Add Record:
-   - Type **CNAME**, Name `<label>`, Record: **exactly the target Vercel prints
-     on the domain configuration screen** — read it from the dashboard, do not
-     copy it from documentation.
-   - TTL 300 during cutover.
-   Verify: Vercel shows **Valid Configuration**.
+Delegating the nameservers to Vercel moved the **whole zone**, not just the web
+records. TopHost's Zone Editor is no longer authoritative for this domain. That
+is a legitimate choice — it makes the apex, the certificate and the www redirect
+self-configuring, which is exactly what you want for a Vercel-hosted site — but it
+means **every mail record must now be created in Vercel DNS**, and until they are,
+mail to `@semidom.md` has nowhere to go.
 
-9. **Check CAA on the parent.** `dig CAA xelacktech.com +short` — any CAA record
-   must permit `letsencrypt.org`, or certificate issuance silently fails.
+The domain was bought without hosting, so no mailbox exists yet. That is actually
+convenient: nothing is being broken, and the mailbox host is still an open choice.
 
-10. **Nothing may proxy the subdomain.** If Cloudflare or cPanel sits in front,
-    set it to DNS-only. A proxy changes the header set and can collapse every
-    visitor into one rate-limit bucket, turning a per-IP limit into a site-wide cap.
+---
 
-11. **After DNS resolves** — the checks that cannot be run earlier:
-    1. `dig +short <label>.xelacktech.com` → the Vercel target; `https://…/ro` → 200
-    2. `http://…/ro` → 308 to https
-    3. `/ro` still carries `noindex` (Gate A is still closed)
-    4. `curl -sI …/ro | grep -i cache-control` → the browser must receive
-       `max-age=0, must-revalidate`, not a bare `s-maxage`
-    5. `strict-transport-security: max-age=300`
-    6. Real-device form submission on mobile data → email arrives
-    7. Restore TTL to 3600 once stable
+## Stage 1 — the site answers on the domain
 
-12. **Add the `.vercel.app` → subdomain redirect** in Vercel domain settings so
-    the two hosts cannot compete. The production aliases today are
-    `semidom.vercel.app` and `semidom-albotciprians-projects.vercel.app`.
+| # | Step | Where | Verify |
+| --- | --- | --- | --- |
+| 1.1 | Add `semidom.md` to the `semidom` project | Vercel → Settings → Domains | The zone stops answering "refused" |
+| 1.2 | Add `www.semidom.md`, set it to **redirect to `semidom.md`** | same screen | One canonical host, no duplicate content |
+| 1.3 | Wait for the registry to publish the delegation | nothing to do | `dns.google/resolve?name=semidom.md&type=NS` lists `vercel-dns` |
+| 1.4 | Confirm the certificate issued | Vercel → Domains | `https://semidom.md/ro` returns 200, not a TLS error |
+| 1.5 | Confirm `http://` redirects to `https://` | | `curl -sI http://semidom.md/ro` → 308 |
 
-## Phase D — indexing
+The apex needs **no manual A record** while Vercel holds the nameservers. If you
+ever move the nameservers away, that changes — and so does everything below.
 
-Only after every precondition below. **The flip is cheap; the un-flip is not.**
+---
 
-### Preconditions for `GATE_A_COMPLETE = true`
+## Stage 2 — decide where the mailbox lives
 
-Engineering — all **done** as of 2026-08-19 unless marked:
+`contact@semidom.md` has to be hosted somewhere, and that decision drives the MX
+records. Vercel does not host mailboxes.
+
+| Option | Cost | Setup | Notes |
+| --- | --- | --- | --- |
+| **Zoho Mail** free tier | free, 1 user, 5 GB | ~20 min | Good deliverability, real webmail and mobile apps. The usual choice for a one-person business. |
+| **TopHost mail hosting** | paid add-on | ~15 min | Everything stays with one supplier and the support is in Romanian. Ask them for the MX, SPF and DKIM values. |
+| **Google Workspace** | ~6 EUR/user/month | ~20 min | Best deliverability and the familiar interface; the only one with a real running cost. |
+
+Whichever you pick, you get from them: **MX hostnames and priorities**, an **SPF
+include**, and a **DKIM record**. Those three go into Vercel DNS in Stage 3.
+
+> Do not skip this by pointing `contact@` at a Gmail address. The form sends *from*
+> `semidom.md`; if the domain has no mail setup at all, the whole thing is fragile
+> and looks unprofessional on a business card.
+
+---
+
+## Stage 3 — DNS records in Vercel
+
+All of these are created at **Vercel → Domains → `semidom.md` → DNS Records**.
+
+| Type | Name | Value | Purpose |
+| --- | --- | --- | --- |
+| MX | `@` | *from your mail provider*, with their priorities | Where mail for `@semidom.md` is delivered |
+| TXT | `@` | the merged SPF — see below | Which servers may send as `semidom.md` |
+| TXT/CNAME | *provider's DKIM selector* | *from your mail provider* | Signs outgoing mailbox mail |
+| MX | `send` | *from Resend* | Resend's bounce handling |
+| TXT | `send` | *from Resend* | SPF for Resend's return-path |
+| TXT | `resend._domainkey` | *from Resend* | Signs the lead emails |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:contact@semidom.md` | Start in report-only |
+
+**Every value marked *from …* must be copied out of that provider's dashboard.**
+Do not take them from documentation or from this file — they are per-account and
+they change.
+
+### The SPF record — the one that bites
+
+A domain may have **exactly one** SPF TXT record at the apex. Publishing two makes
+authentication fail outright, which is worse than having none. Merge them:
+
+```text
+v=spf1 include:<your-mail-provider> include:amazonses.com ~all
+```
+
+Resend sends through Amazon SES, so `include:amazonses.com` is what covers it —
+but read the exact include Resend shows you, because it can differ by region.
+
+Two things that make this easier than it looks: Resend puts its SPF on the
+`send.semidom.md` subdomain, so in practice it usually does **not** collide with
+your mailbox provider's apex SPF; and DKIM, which is what actually authenticates
+the `From:` domain, uses different selectors per provider and never collides.
+
+Keep the total DNS lookups in the SPF chain under **10** — each `include:` can
+itself expand. Two includes is comfortably safe.
+
+### DMARC
+
+Start at `p=none`. It changes nothing about delivery and simply mails you reports.
+Move to `p=quarantine` only after a couple of weeks of clean reports, and only once
+both the mailbox and Resend are signing correctly.
+
+---
+
+## Stage 4 — Resend
+
+1. Resend → Domains → Add `semidom.md`, pick the region closest to Moldova.
+2. Resend prints a set of DNS records. Create each one in Vercel DNS exactly as shown.
+3. Wait for Resend to show the domain **Verified**.
+4. Create an API key **scoped to sending only**, not a full-access key.
+
+**Sending address:** use `SemiDom <noreply@semidom.md>`, not `contact@semidom.md`.
+Sending from the same address you deliver to is a well-known spam-filter trigger,
+and it makes replies loop back into the form's own mailbox. `noreply@` needs no
+mailbox — only the DNS records above.
+
+**Deliverability, first week.** A brand-new domain has no sending reputation. Send
+yourself several test leads, open them, and mark them "not spam" if they land
+there. Do not send anything bulk. Watch the Resend dashboard for bounces.
+
+---
+
+## Stage 5 — Vercel environment variables
+
+**Production scope only** unless the row says otherwise. Vercel defaults to all
+environments — narrow each one deliberately.
+
+| Variable | Scope | Value |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Production | `https://semidom.md` — no trailing slash |
+| `CONFIRMED_PRODUCTION_HOST` | Production | `semidom.md` — host only, lowercase |
+| `RESEND_API_KEY` | Production | The send-only key. Preview must have **no** key: a preview deployment must never be able to send mail. |
+| `LEAD_FROM_EMAIL` | Production | `SemiDom <noreply@semidom.md>` |
+| `LEAD_TO_EMAIL` | Production | `contact@semidom.md` |
+| `LEAD_FORM_SECRET` | Production + Preview, **different values** | Any long random string. Otherwise the HMAC falls back to a public default. |
+| `IP_HASH_SALT` | Production + Preview, **different values** | Any long random string. Otherwise IP hashing falls back to a public default. |
+| `LEAD_CONSENT_VERSION` | Production | e.g. `2026-09-05` |
+
+> **Everything is baked at build time.** Changing a variable in the dashboard does
+> nothing until you redeploy. After setting these, trigger a redeploy.
+
+The host comparison tolerates a scheme, a trailing slash, case and a trailing dot —
+but `www.semidom.md` is deliberately **not** treated as the same host as
+`semidom.md`. Use the apex in both variables.
+
+---
+
+## Stage 6 — verify before announcing anything
+
+```bash
+curl -sI https://semidom.md/ro                    # 200
+curl -sI http://semidom.md/ro                     # 308 to https
+curl -sI https://www.semidom.md/ro                # redirect to apex
+curl -s  https://semidom.md/robots.txt            # Disallow: /   (Gate A still closed)
+curl -s  https://semidom.md/sitemap.xml           # empty urlset
+curl -sI https://semidom.md/llms.txt              # 404
+curl -s  https://semidom.md/ro | grep 'name="robots"'   # noindex, nofollow
+curl -sI https://semidom.md/ro | grep -i strict-transport   # max-age=300
+```
+
+Then the form, by hand:
+
+- Submit once → the email arrives at `contact@semidom.md` within 8 seconds, and
+  **not** in the spam folder.
+- **Submit the identical form again → it must NOT claim success.** This is the
+  regression check for D-014; a retry after a failure must be a real retry.
+- Repeat once with JavaScript disabled in the browser.
+- Submit once from a phone on mobile data, so the rate limiter sees a real client IP.
+
+---
+
+## Stage 7 — indexing
+
+Only after every precondition. **The flip is cheap; the un-flip is not** — Google
+does not de-index on demand, and `Disallow` prevents the very crawl that would read
+the `noindex`.
+
+### Engineering — done unless marked
 
 - [x] Retry after a failed delivery no longer claims success (D-014)
 - [x] Message line breaks preserved (D-015)
-- [x] `/proces` removed from the sitemap
-- [x] Home page emits canonical, Open Graph, Twitter card and JSON-LD
-- [x] Root description no longer says "Previzualizare de design"
-- [x] Zero `CONFIRM_OWNER` strings and zero placeholder metrics in rendered HTML (D-016)
+- [x] Sitemap contains only routes that exist, asserted by a test
+- [x] Canonical, Open Graph, Twitter card and JSON-LD on the homepage
+- [x] Zero `CONFIRM_OWNER` strings and zero placeholder metrics in the rendered HTML
 - [x] `/ru` carries `noindex` independently of Gate A
-- [x] Branded 404 at both `/zz` and `/ro/zz`
-- [x] One indexability predicate, shared with the build config, 20 tests (D-013)
-- [x] `serverActions.allowedOrigins` pinned to `semidom.xelacktech.com`
+- [x] Branded 404 at both levels
+- [x] One indexability predicate, shared with the build config
+- [x] `serverActions.allowedOrigins` pinned to `semidom.md` and `www.semidom.md`
 - [ ] Turnstile shipped, or the "rate limiting implemented" claim corrected at the gate
 
-Owner — all still **open**:
+### Owner — still open
 
-- [x] **A1** brand name — **SemiDom** (D-018)
-- [ ] **A4** legal entity (renders in the privacy notice)
-- [x] **B2** teracotă — yes, it is performed. Still needs ONE photograph before
-      Gate A: the card carries `imageConfirm` and a test blocks the flip.
+- [x] **A1** brand — **SemiDom** (D-018) · **A3** domain — **semidom.md** (D-022)
+- [ ] **A4** legal entity — renders in the privacy notice; the form collects a
+      phone number and the notice cannot yet name who is responsible for it
 - [ ] **B1** exact service list · **B4** localities served
-- [ ] **E1–E3** phone confirmed, which messengers exist · **E4** destination inbox
-- [ ] **G1** written right to publish the project photographs
-- [ ] **G3** manual privacy pass over all 30 stills (faces, documents, plates, identifiable property)
-- [x] Host decided: `semidom.xelacktech.com` (subdomain kept)
-- [ ] Resend provisioned and a real test lead delivered end to end
+- [x] **B2** teracotă — performed, but still needs **one photograph**; the service
+      card carries `imageConfirm` and a test blocks the flip while it is set
+- [ ] **E2/E3** which of WhatsApp, Viber, Telegram exist on the number
+- [ ] **G1** written permission to publish the project photographs
+- [ ] **G3** privacy pass over the 30 stills — faces, documents, plates, identifiable property
+- [ ] Resend verified and a real test lead delivered end to end
 
 ### The flip
 
-13. Set `GATE_A_COMPLETE = true` in `config/indexability.mjs`. One line, last step.
-    Commit, push, deploy. If the two host variables disagree, **the build now fails
-    loudly** instead of shipping an invisible site.
-14. Verify on the live subdomain: `noindex` absent on `/ro`; `robots.txt` allows
-    crawling and carries a `Sitemap:` line; every `<loc>` in the sitemap returns
-    200 on the subdomain host; `/llms.txt` 200; canonical, `og:` and `ld+json`
-    all present; `/ru` still `noindex`.
-15. Search Console: DNS TXT verification in cPanel — **verify the subdomain as its
-    own property, or use a DNS-verified Domain property**. A URL-prefix property
-    on the parent reports nothing for a subdomain. Submit the sitemap.
-16. Rich Results Test, Facebook Sharing Debugger, and send the link in WhatsApp.
-17. After 48h of clean HTTPS: raise HSTS `max-age` 300 → 31536000 in
-    `next.config.mjs`. **Never add `preload`** — the preload list accepts only
-    apex domains, so from a subdomain it is inert, and acting on it would force
-    HTTPS on every sibling of `xelacktech.com`.
-18. After a clean CSP report-only run at 390px and 1440px (exercise the hamburger
-    and the scroll-solid header): promote `Content-Security-Policy-Report-Only`
-    to `Content-Security-Policy` and re-add `upgrade-insecure-requests`.
+1. Set `GATE_A_COMPLETE = true` in `config/indexability.mjs`. One line, last step.
+   Commit and push; the deploy is automatic. If the two host variables disagree the
+   **build now fails loudly** instead of shipping an invisible site.
+2. Verify on the live domain: `noindex` absent from `/ro`; `robots.txt` allows
+   crawling and carries a `Sitemap:` line; every `<loc>` returns 200 on `semidom.md`;
+   `/llms.txt` 200; canonical, `og:` and `ld+json` all present; `/ru` still `noindex`.
+3. Search Console: add `semidom.md` as a **Domain property** (DNS TXT — the record
+   goes in Vercel DNS now, not TopHost). Submit the sitemap.
+4. Rich Results Test, Facebook Sharing Debugger, and send the link to yourself in
+   WhatsApp to confirm the preview card renders.
+5. After 48 hours of clean HTTPS: raise HSTS `max-age` from 300 to 31536000 in
+   `next.config.mjs`. On an apex domain `preload` becomes possible — but do not add
+   it until you are certain every future subdomain will be HTTPS, because it is
+   effectively irreversible.
+6. After a clean CSP report-only run at 390px and 1440px: promote
+   `Content-Security-Policy-Report-Only` to `Content-Security-Policy` and re-add
+   `upgrade-insecure-requests`.
+
+---
 
 ## Rollback
 
 | Failure | Action |
 | --- | --- |
-| Bad deploy | Vercel Instant Rollback — promote the previous production deployment |
+| Bad deploy | Vercel Instant Rollback — promote the previous production deployment. Seconds, no DNS involved. |
 | Env misconfiguration | Fix the variable **and redeploy** — everything is baked at build time |
-| DNS wrong | Restore the previous record in cPanel. This is why step 6 lowers TTL first |
-| Certificate never issues | Remove the domain from Vercel, fix the CAA or the conflicting A record, re-add. `.vercel.app` keeps serving throughout |
-| Indexed too early | `GATE_A_COMPLETE = false` and deploy — but Google does **not** un-index instantly, and `Disallow` prevents the crawl that would read the `noindex`. Use the Search Console Removals tool for a temporary block and keep robots.txt permissive so the `noindex` is readable |
-| Lead delivery failing | Watch `delivery=` in Vercel runtime logs and the Resend dashboard for the first week. Any `failed` or `not_configured` is a same-day incident — a lost lead cannot be recovered |
+| Site unreachable after delegation | Almost certainly the zone does not exist: add the domain to the Vercel project |
+| Mail stops working | Check the MX records in Vercel DNS. The zone moved; TopHost's Zone Editor no longer applies to this domain. |
+| Certificate never issues | Check for a CAA record on the apex that excludes Let's Encrypt |
+| Lead delivery failing | Watch `delivery=` in the Vercel runtime logs and the Resend dashboard daily for the first week. Any `failed` or `not_configured` is a same-day incident — a lost lead cannot be recovered. |
+| Indexed too early | `GATE_A_COMPLETE = false`, push. Then use Search Console **Removals** for a temporary block, and keep `robots.txt` permissive so the `noindex` is actually readable. |
 
 ---
 
-## Applying the brand name
+## Applying a future rename
 
-Only two places hardcode it; everything else derives from `site.name`.
+`site.name` / `site.shortName` / `site.descriptorShort` in `lib/content.ts` is the
+single source. `app/layout.tsx`, the footer, the header wordmark, `llms.txt`, the
+JSON-LD graph and the privacy notice all derive from it. The two things that need a
+human decision are the descriptor beside the wordmark
+(`components/public/site-header.tsx`) and the hero `h1` (`lib/hero.ts`).
 
-| File | What changes |
-| --- | --- |
-| `lib/content.ts` | `site.name`, `site.shortName`, `site.tagline`; drop `site.confirm` once confirmed |
-| `components/public/site-header.tsx` | The hardcoded `ATELIER` superscript beside the wordmark — delete it or make it the descriptor |
-| `lib/hero.ts` | `heroCopy.ro.title` if "teracotă" leaves the brand; also the only place to put "Chișinău" in the `h1` |
-| `app/(public)/[locale]/confidentialitate/page.tsx` | `LEGAL_ENTITY` and `CONTACT_EMAIL` (A4, E4) |
-| Vercel env | `LEAD_FROM_EMAIL` display name; the subdomain label in both host variables |
-| `docs/work/DECISIONS.md` | A new entry recording the name, the host and the reasoning |
-
-`app/layout.tsx`, the footer, the header wordmark, `llms.txt` and the privacy page
-already read `site.name` and need no edit.
+`.env.example` is excluded from agent file access by the `.env*` permission rule, so
+its two host lines are updated by hand.
