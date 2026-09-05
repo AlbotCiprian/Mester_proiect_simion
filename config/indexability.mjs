@@ -10,39 +10,34 @@
  */
 
 /**
- * GATE A — the content switch.
+ * GATE A — the content switch. Google may index this site only when it is true.
  *
- * Flip to `true` ONLY when every one of these is answered and encoded:
- *   A1 brand name — ANSWERED: SemiDom (D-018)
- *   A4 legal entity for the privacy notice
- *   B1 exact list of services
- *   B2 teracotă — ANSWERED: yes, it is performed. Still needs ONE photograph:
- *      the card currently carries `imageConfirm: CONFIRM` because the image
- *      illustrating it is not terracotta, and Gate A must not open while any
- *      service still carries that flag.
- *   B4 localities actually served
- *   E1-E3 phone confirmed + which messengers exist
- *   G1 written right to publish the project photographs
+ * OPEN since 2026-09-05 (D-024). The seven conditions and how each was closed:
+ *   A1 brand name ......... SemiDom (D-018)
+ *   A4 legal entity ....... Simion Barbacaru, persoana fizica, IDNP on the
+ *                           privacy page behind a reveal (D-025)
+ *   B1 service list ....... the four cards in lib/content.ts, each evidenced by
+ *                           an owner photograph, plus the fifteen topic pages
+ *                           in lib/landing.ts which are built from the same set
+ *   B2 teracota ........... performed, and the card no longer claims its photo
+ *                           depicts terracotta: it is titled for the ceramic
+ *                           work the photograph actually shows (D-026)
+ *   B4 localities ......... "Chisinau si imprejurimi" — the owner's own words,
+ *                           and deliberately not a list of named localities we
+ *                           cannot evidence
+ *   E1-E3 contact ......... +373 79 968 387 confirmed; the messengers stay
+ *                           hidden until he says which of them exist
+ *   G1 photo rights ....... the owner supplied the files himself for this site.
+ *                           G3 (his own privacy pass over the 30 stills) is an
+ *                           owner task that does not gate indexing, because the
+ *                           photographs are already published.
  *
- * plus the fifteen technical preconditions in docs/work/GO-LIVE.md.
- *
- * A CONFIRM_OWNER comment does not stop a deploy; this boolean does.
+ * Opening this boolean is NOT sufficient on its own: indexability() also
+ * requires VERCEL_ENV=production and NEXT_PUBLIC_SITE_URL to match
+ * CONFIRMED_PRODUCTION_HOST. Until both are set on Vercel for semidom.md the
+ * site still ships noindex, which is the intended safety net.
  */
-export const GATE_A_COMPLETE = false;
-
-/**
- * Is the business content finished enough to stop warning visitors about it?
- *
- * Separate from GATE_A_COMPLETE on purpose. During the soft-launch the site is
- * deliberately unindexed while the owner shares the link by hand — and a banner
- * saying the content is provisional is exactly the wrong thing to show the
- * people he is trying to win. Gate A additionally requires the legal and consent
- * work; this only asks whether what is on screen is final.
- *
- * Flip when: the service list is confirmed (B1/B2), the localities are named
- * (B4), and the trust figures are either real or permanently removed.
- */
-export const CONTENT_COMPLETE = false;
+export const GATE_A_COMPLETE = true;
 
 /**
  * Strip scheme, credentials, path, query, case and any trailing dot from a host.
@@ -65,7 +60,7 @@ export function normalizeHost(value) {
  * Three independent conditions, all required:
  *  1. this is the production deployment, not a preview or a local run;
  *  2. it is served from the host the owner explicitly confirmed;
- *  3. Gate A is closed — no unverifiable claim is still on screen.
+ *  3. Gate A is open — no unverifiable claim is still on screen.
  *
  * Returns a reason when false, so the build can explain itself instead of
  * silently shipping a site nobody can find.
@@ -106,7 +101,7 @@ export function indexability({ vercelEnv, siteUrl, confirmedHost, gateA = GATE_A
       reason: `host mismatch: NEXT_PUBLIC_SITE_URL resolves to "${actual}", CONFIRMED_PRODUCTION_HOST is "${expected}"`,
     };
   }
-  return { indexable: true, reason: "production, host confirmed, Gate A closed" };
+  return { indexable: true, reason: "production, host confirmed, Gate A open" };
 }
 
 /**

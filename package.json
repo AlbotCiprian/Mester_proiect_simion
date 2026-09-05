@@ -1,8 +1,8 @@
 {
-  "name": "mester-teracota-moldova",
+  "name": "semidom",
   "version": "0.1.0",
   "private": true,
-  "description": "Premium lead-generation website for tile installation and bathroom renovation services in Moldova.",
+  "description": "Premium lead-generation website for SemiDom - tile installation and bathroom renovation in Moldova.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

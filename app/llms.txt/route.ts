@@ -1,5 +1,6 @@
 import { INDEXABLE, absoluteUrl } from "@/lib/seo";
 import { phone, services, site } from "@/lib/content";
+import { landingPages } from "@/lib/landing";
 import { defaultLocale } from "@/lib/i18n";
 
 /**
@@ -29,6 +30,11 @@ export function GET(): Response {
     "",
     "## Servicii",
     ...services.map((s) => `- [${s.title}](${home}#servicii): ${s.summary}`),
+    "",
+    "## Pagini pe subiecte",
+    ...landingPages.map(
+      (page) => `- [${page.h1}](${absoluteUrl(`/${defaultLocale}/servicii/${page.slug}`)}): ${page.metaDescription}`,
+    ),
     "",
     "## Proiecte",
     `- [Lucrări executate](${home}#proiecte): fotografii reale de la fața locului, pe etape — pregătirea suportului, hidroizolație, montaj și rost finisat.`,

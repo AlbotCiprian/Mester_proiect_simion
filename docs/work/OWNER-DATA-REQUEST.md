@@ -11,20 +11,27 @@
 Legendă: **[BLOCHEAZĂ]** = fără acest răspuns site-ul nu poate fi indexat în
 Google. Restul se pot completa pe parcurs.
 
+> **Actualizare 05.09.2026.** Nimic din acest document nu mai blochează
+> indexarea. Grupele A și B au primit răspuns, iar Gate A este deschis (D-024).
+> Ce a rămas mai jos crește conversia sau acoperă un risc juridic — merită
+> obținut, dar nu ține site-ul pe loc. Planul de lansare este
+> [PLAN-SPRINTURI.md](PLAN-SPRINTURI.md).
+
 ---
 
-## Grupa A — Denumire și domeniu **[BLOCHEAZĂ]**
+## Grupa A — Denumire și domeniu ✅ complet
 
-Numele este **SemiDom** (confirmat 03.09.2026). Rămâne de confirmat entitatea juridică.
+Numele este **SemiDom** (03.09.2026), domeniul **semidom.md** (05.09.2026), iar
+operatorul de date este **Simion Barbacaru, persoană fizică** (05.09.2026).
 
 | # | Întrebare | Exemplu de răspuns |
 |---|---|---|
 | A1 | ~~Cum vrei să se numească firma pe site?~~ | ✅ **SemiDom** |
 | A2 | Ai deja un logo sau facem unul? | „Am unul, ți-l trimit" |
-| A3 | Confirmi că mergem pe subdomeniu (ex. `teracota.xelacktech.com`) sau cumpărăm un domeniu `.md`? | „Deocamdată subdomeniu" |
-| A4 | Ai firmă înregistrată (SRL / II / patentă) și cum se numește exact? | „II Simion Ion" |
+| A3 | ~~Subdomeniu sau domeniu `.md`?~~ | ✅ **semidom.md**, cumpărat la TopHost |
+| A4 | ~~Ai firmă înregistrată și cum se numește exact?~~ | ✅ **persoană fizică — Simion Barbacaru**, IDNP publicat în politica de confidențialitate, ascuns implicit |
 
-> **De ce blochează A1 și A4:** dacă indexăm Google sub un nume care apoi se
+> **De ce contau A1 și A4:** dacă indexăm Google sub un nume care apoi se
 > schimbă, pierdem primele luni de poziționare. Iar formularul colectează numere
 > de telefon — politica de confidențialitate trebuie să numească cine răspunde
 > de acele date.
@@ -39,10 +46,10 @@ Numele este **SemiDom** (confirmat 03.09.2026). Rămâne de confirmat entitatea 
 
 | # | Întrebare | Exemplu |
 |---|---|---|
-| B1 | Ce lucrări faci, exact? Enumeră-le. | „Gresie, faianță, renovare completă baie, placări exterioare" |
-| B2 | **Faci teracotă / sobe?** Pe site apare serviciul, dar nu avem nicio poză de teracotă. | „Nu, scoate-l" |
+| B1 | ~~Ce lucrări faci, exact?~~ | ✅ acoperit de cele 4 carduri + 15 pagini de subiect. **Spune-mi dacă vreuna nu este corectă sau lipsește.** |
+| B2 | ~~Faci teracotă?~~ ✅ da. **Rămâne: o singură fotografie cu teracotă.** Pagina `/ro/servicii/teracota` există și spune sincer că fotografiile arată ceramică, nu teracotă. | o poză pe WhatsApp |
 | B3 | Ce NU faci, ca să nu te sune degeaba? | „Nu fac electrică, nu fac tavane extensibile" |
-| B4 | În ce localități te deplasezi? Scrie-le pe toate. | „Chișinău, Ialoveni, Stăuceni, Codru, Durlești" |
+| B4 | ~~În ce localități te deplasezi?~~ | ✅ „Chișinău și împrejurimi", cuvintele tale. Dacă vrei localități numite pe site, dă-mi lista — un test blochează orice localitate nedovedită |
 | B5 | Te deplasezi în afara Chișinăului? De la ce distanță ceri în plus? | „Până la 30 km da" |
 | B6 | Câți oameni sunteți în echipă? | „Suntem 2, la lucrări mari 3" |
 | B7 | De câți ani lucrezi în domeniu? | „De 8 ani" |
@@ -87,13 +94,13 @@ Numele este **SemiDom** (confirmat 03.09.2026). Rămâne de confirmat entitatea 
 | E1 | Numărul **+373 79 968 387** e cel bun și e cel pe care răspunzi? | „Da" |
 | E2 | Pe numărul ăsta ai **WhatsApp**? Ai **Viber**? | „WhatsApp da, Viber nu" |
 | E3 | Ai **Telegram**? Care e @numele de utilizator? (nu merge doar cu numărul) | „@simion_placari" |
-| E4 | Ce adresă de e-mail folosești? **Acolo îți vin cererile de pe site.** | „simion.placari@gmail.com" |
+| E4 | ~~Ce adresă de e-mail folosești?~~ | ✅ **contact@semidom.md**, de creat. Până atunci putem trimite lead-urile la orice adresă existentă — mai bine Gmail decât o adresă care nu răspunde |
 | E5 | Ai Facebook / Instagram / TikTok? Trimite linkurile. | „Instagram: @simion.ceramica" |
 | E6 | Ai profil pe **Google Maps / Google Business**? Dacă nu, îl facem. | „Nu am" |
 | E7 | Ai anunț pe 999.md sau alt site? | „Da, pe 999.md" |
 | E8 | Cine răspunde la telefon și în cât timp? | „Eu, în aceeași zi" |
 
-> **E4 este cel mai urgent din tot documentul.** Fără o adresă de e-mail,
+> **E2/E3 sunt acum cele mai valoroase din document.** Fără o adresă de e-mail,
 > formularul nu are unde livra cererile — vizitatorul primește mesajul „nu am
 > putut trimite" și numărul de telefon.
 >

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   estimator,
   faqs,
@@ -9,13 +10,14 @@ import {
   reviews,
   services,
   trustFacts,
-  publicChannels,
 } from "@/lib/content";
 import type { Locale } from "@/lib/i18n";
 import { Arrow, Button, Container, Kicker, Section, SectionHeading } from "@/components/public/ui";
+import { CallButton, ContactBand } from "@/components/public/cta";
 import { Journey } from "@/components/public/journey/journey";
 import { LeadForm } from "@/components/public/lead-form";
 import { CinematicHero } from "@/components/public/hero/cinematic-hero";
+import { landingPages } from "@/lib/landing";
 
 /* -------------------------------------------------------- Trust strip */
 function TrustStrip() {
@@ -38,7 +40,7 @@ function TrustStrip() {
 }
 
 /* ----------------------------------------------------------- Services */
-function Services() {
+function Services({ locale }: { locale: Locale }) {
   return (
     <Section id="servicii" tone="canvas" divide>
       <Container>
@@ -49,7 +51,11 @@ function Services() {
         />
         <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2">
           {services.map((s, i) => (
-            <article key={s.slug} className="group transition-transform duration-300 hover:-translate-y-1">
+            <Link
+              key={s.slug}
+              href={`/${locale}/servicii/${s.landingSlug}`}
+              className="group block transition-transform duration-300 hover:-translate-y-1"
+            >
               <div className="relative aspect-[4/3] overflow-hidden rounded-sm border border-line">
                 <Image
                   src={s.image}
@@ -73,8 +79,23 @@ function Services() {
                   </li>
                 ))}
               </ul>
-            </article>
+              <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-bronze-deep">
+                Detalii și etape <Arrow />
+              </span>
+            </Link>
           ))}
+        </div>
+
+        <div className="mt-14 border-t border-line pt-8">
+          <p className="text-base text-ink-soft">
+            Fiecare lucrare are pagina ei, cu ordinea reală de execuție și greșelile de evitat.
+          </p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button href={`/${locale}/servicii`} variant="secondary">
+              Vezi toate cele {landingPages.length} lucrări <Arrow />
+            </Button>
+            <CallButton variant="bronze" />
+          </div>
         </div>
       </Container>
     </Section>
@@ -415,15 +436,9 @@ function FinalCta({ locale }: { locale: Locale }) {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-canvas/50">
                 Sau direct la telefon
               </p>
-              {publicChannels.map((c) => (
-                <a
-                  key={c.type}
-                  href={c.href}
-                  className="mt-2 inline-block font-display text-2xl text-canvas transition-colors hover:text-bronze-light"
-                >
-                  {c.label}
-                </a>
-              ))}
+              <div className="mt-3">
+                <CallButton variant="ghost-light" />
+              </div>
             </div>
           </div>
 
@@ -441,11 +456,19 @@ export function HomeSections({ locale }: { locale: Locale }) {
     <>
       <CinematicHero locale={locale} />
       <TrustStrip />
-      <Services />
+      <Services locale={locale} />
       <Flagship />
       <Journey />
       <PrecisionProof />
       <Process />
+      {/* The first ask, at the halfway point. Everything above is proof; the
+          bottom form is four screens away on a phone, and a visitor convinced
+          here should not have to scroll past six sections to act. */}
+      <ContactBand
+        locale={locale}
+        title="Ai o baie sau o suprafață de placat?"
+        body="Sună și spune-ne în două fraze despre ce e vorba, sau completează formularul. Îți spunem ce implică și de ce informații mai avem nevoie."
+      />
       <EstimatorTeaser />
       <Portfolio />
       <Reviews />

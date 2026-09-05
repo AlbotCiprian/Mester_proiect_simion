@@ -26,6 +26,22 @@ const SEO_TOOL_BOTS = [
   "Bytespider",
   // Bulk dataset harvesting with no referral path back to the business.
   "CCBot",
+  "omgili",
+  "omgilibot",
+  "Diffbot",
+  "magpie-crawler",
+  "ImagesiftBot",
+  "Timpibot",
+  // Regional engines with no meaningful audience in Moldova. Yandex is NOT
+  // here and must never be: Russian-speaking Chisinau uses it for real.
+  "Sogou web spider",
+  "YisouSpider",
+  // Second Ahrefs agent. AhrefsBot alone does not cover the site-audit crawler,
+  // which is the one that actually hammers a small site.
+  "AhrefsSiteAudit",
+  "SerpstatBot",
+  "Barkrowler",
+  "ZoominfoBot",
 ];
 
 /*

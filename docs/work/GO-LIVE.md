@@ -6,6 +6,10 @@ on every push.
 
 ---
 
+> The owner-facing staged plan, in Romanian, is
+> **[PLAN-SPRINTURI.md](PLAN-SPRINTURI.md)**. This file is the technical detail
+> behind it.
+
 ## STOP — do this first
 
 **Measured 2026-09-05, and it is the one thing that blocks everything else:**
@@ -23,7 +27,10 @@ Two facts, and the second one is the trap:
 1. The `.md` registry has **not yet published** the delegation. TopHost said up to
    24 hours; that part is just waiting.
 2. **Vercel has no DNS zone for `semidom.md`.** Its nameservers answer *Query
-   refused*, not "no such record".
+   refused*, not "no such record". Confirmed independently against the project
+   API: `semidom` (`prj_I4TAUJdBB6MvDSnHA6hdjd49zlPm`) lists only
+   `semidom.vercel.app` and the two generated aliases. The custom domain is
+   simply not attached.
 
 So the moment the registry does publish `ns1/ns2.vercel-dns.com`, the domain will
 resolve to **nothing** — no website, no mail, no way to receive anything — until
@@ -146,6 +153,12 @@ both the mailbox and Resend are signing correctly.
 3. Wait for Resend to show the domain **Verified**.
 4. Create an API key **scoped to sending only**, not a full-access key.
 
+> ⚠️ **Revoke `re_EYZf7EP3_…` first.** That key was visible in a screenshot
+> shared in chat, which makes it compromised regardless of who saw it. Delete it
+> in the Resend dashboard, then create the sending-only replacement. It is not in
+> the repository — that was checked — so revoking it costs nothing but the
+> minute it takes.
+
 **Sending address:** use `SemiDom <noreply@semidom.md>`, not `contact@semidom.md`.
 Sending from the same address you deliver to is a well-known spam-filter trigger,
 and it makes replies loop back into the form's own mailbox. `noreply@` needs no
@@ -168,10 +181,17 @@ environments — narrow each one deliberately.
 | `CONFIRMED_PRODUCTION_HOST` | Production | `semidom.md` — host only, lowercase |
 | `RESEND_API_KEY` | Production | The send-only key. Preview must have **no** key: a preview deployment must never be able to send mail. |
 | `LEAD_FROM_EMAIL` | Production | `SemiDom <noreply@semidom.md>` |
-| `LEAD_TO_EMAIL` | Production | `contact@semidom.md` |
+| `LEAD_TO_EMAIL` | Production | `contact@semidom.md` — **or any mailbox that already exists**, see below |
 | `LEAD_FORM_SECRET` | Production + Preview, **different values** | Any long random string. Otherwise the HMAC falls back to a public default. |
 | `IP_HASH_SALT` | Production + Preview, **different values** | Any long random string. Otherwise IP hashing falls back to a public default. |
 | `LEAD_CONSENT_VERSION` | Production | e.g. `2026-09-05` |
+
+> **`LEAD_TO_EMAIL` does not have to wait for the mailbox.** Point it at an
+> address that already works — a personal Gmail, anything — and change it once
+> `contact@semidom.md` is provisioned. A lead delivered to Gmail is infinitely
+> better than a lead delivered to an address that bounces, and this is the one
+> variable whose misconfiguration loses customers silently. The *sending* domain
+> still has to be verified in Resend either way.
 
 > **Everything is baked at build time.** Changing a variable in the dashboard does
 > nothing until you redeploy. After setting these, trigger a redeploy.
@@ -188,11 +208,15 @@ but `www.semidom.md` is deliberately **not** treated as the same host as
 curl -sI https://semidom.md/ro                    # 200
 curl -sI http://semidom.md/ro                     # 308 to https
 curl -sI https://www.semidom.md/ro                # redirect to apex
-curl -s  https://semidom.md/robots.txt            # Disallow: /   (Gate A still closed)
-curl -s  https://semidom.md/sitemap.xml           # empty urlset
-curl -sI https://semidom.md/llms.txt              # 404
-curl -s  https://semidom.md/ro | grep 'name="robots"'   # noindex, nofollow
+curl -s  https://semidom.md/robots.txt            # Allow: / + a Sitemap: line
+curl -s  https://semidom.md/sitemap.xml           # 18 <loc> entries, all https://semidom.md
+curl -sI https://semidom.md/llms.txt              # 200
+curl -s  https://semidom.md/ro | grep 'name="robots"'   # NOTHING — absence is correct
+curl -s  https://semidom.md/ru | grep 'name="robots"'   # noindex, nofollow (unpublished locale)
+curl -sI https://semidom.md/ro/servicii/hidroizolatie-baie   # 200
+curl -sI https://semidom.md/ro/servicii/inexistent           # 404
 curl -sI https://semidom.md/ro | grep -i strict-transport   # max-age=300
+curl -sI https://semidom.md/ro | grep -i x-robots-tag        # NOTHING — absence is correct
 ```
 
 Then the form, by hand:
@@ -212,48 +236,67 @@ Only after every precondition. **The flip is cheap; the un-flip is not** — Goo
 does not de-index on demand, and `Disallow` prevents the very crawl that would read
 the `noindex`.
 
-### Engineering — done unless marked
+### Engineering — complete
 
 - [x] Retry after a failed delivery no longer claims success (D-014)
 - [x] Message line breaks preserved (D-015)
-- [x] Sitemap contains only routes that exist, asserted by a test
-- [x] Canonical, Open Graph, Twitter card and JSON-LD on the homepage
-- [x] Zero `CONFIRM_OWNER` strings and zero placeholder metrics in the rendered HTML
+- [x] Sitemap contains only routes that exist, asserted by a test that also
+      couples it to the route's own `generateStaticParams`
+- [x] Canonical, Open Graph, Twitter card and JSON-LD on every public page
+- [x] Zero `CONFIRM_OWNER` strings and zero placeholder metrics in rendered HTML
 - [x] `/ru` carries `noindex` independently of Gate A
-- [x] Branded 404 at both levels
+- [x] Branded 404 at both levels; unknown topic slugs 404 (`dynamicParams = false`)
 - [x] One indexability predicate, shared with the build config
 - [x] `serverActions.allowedOrigins` pinned to `semidom.md` and `www.semidom.md`
+- [x] Fifteen topic pages, hub, internal linking, `Service`/`FAQPage`/`BreadcrumbList`
+- [x] Every route renders an `id="contact"` target, asserted by a test
 - [ ] Turnstile shipped, or the "rate limiting implemented" claim corrected at the gate
 
-### Owner — still open
+### Gate A — OPEN since 2026-09-05 (D-024)
 
-- [x] **A1** brand — **SemiDom** (D-018) · **A3** domain — **semidom.md** (D-022)
-- [ ] **A4** legal entity — renders in the privacy notice; the form collects a
-      phone number and the notice cannot yet name who is responsible for it
-- [ ] **B1** exact service list · **B4** localities served
-- [x] **B2** teracotă — performed, but still needs **one photograph**; the service
-      card carries `imageConfirm` and a test blocks the flip while it is set
-- [ ] **E2/E3** which of WhatsApp, Viber, Telegram exist on the number
+`GATE_A_COMPLETE = true`. The site is still `noindex` until BOTH host variables
+are set on Vercel for a production deployment; that is the remaining safety net
+and it is intentional. If they disagree by a scheme, a slash or a capital letter
+the **build fails loudly** rather than shipping an invisible site.
+
+- [x] **A1** brand — SemiDom (D-018) · **A3** domain — semidom.md (D-022)
+- [x] **A4** legal entity — Simion Barbacaru, persoană fizică, IDNP published
+      behind a reveal in the privacy notice (D-025)
+- [x] **B1** service list — four cards, each evidenced by owner photography, plus
+      fifteen topic pages built from the same material
+- [x] **B2** teracotă — performed; the card is now named for the photograph it
+      actually has, and the page says so in its own FAQ (D-026)
+- [x] **B4** localities — "Chișinău și împrejurimi", his own words; a test blocks
+      any named locality we cannot evidence
+
+### Owner — not blocking indexing, but worth money
+
+- [ ] **E2/E3** which of WhatsApp, Viber, Telegram exist on the number — unlocks
+      the third action in the mobile bar
+- [ ] **B2** one terracotta photograph, so that page carries its own proof
 - [ ] **G1** written permission to publish the project photographs
-- [ ] **G3** privacy pass over the 30 stills — faces, documents, plates, identifiable property
+- [ ] **G3** privacy pass over the 30 stills — faces, documents, plates, property
+- [ ] **B7/D1** figures he can evidence; the trust strip renders nothing while empty
+- [ ] **G4** real, sourced, consented reviews
 - [ ] Resend verified and a real test lead delivered end to end
 
 ### The flip
 
-1. Set `GATE_A_COMPLETE = true` in `config/indexability.mjs`. One line, last step.
-   Commit and push; the deploy is automatic. If the two host variables disagree the
-   **build now fails loudly** instead of shipping an invisible site.
-2. Verify on the live domain: `noindex` absent from `/ro`; `robots.txt` allows
-   crawling and carries a `Sitemap:` line; every `<loc>` returns 200 on `semidom.md`;
-   `/llms.txt` 200; canonical, `og:` and `ld+json` all present; `/ru` still `noindex`.
-3. Search Console: add `semidom.md` as a **Domain property** (DNS TXT — the record
+There is no code flip left. It happens the moment a production deployment has
+`NEXT_PUBLIC_SITE_URL=https://semidom.md` and `CONFIRMED_PRODUCTION_HOST=semidom.md`.
+Both are read at BUILD time, so set them and then redeploy.
+
+1. Verify on the live domain, with the probes in Stage 6.
+2. Search Console: add `semidom.md` as a **Domain property** (DNS TXT — the record
    goes in Vercel DNS now, not TopHost). Submit the sitemap.
-4. Rich Results Test, Facebook Sharing Debugger, and send the link to yourself in
+3. Rich Results Test, Facebook Sharing Debugger, and send the link to yourself in
    WhatsApp to confirm the preview card renders.
+4. Create the **Google Business Profile**. For a tradesman in Chișinău it will
+   out-earn all fifteen pages combined, and it is free.
 5. After 48 hours of clean HTTPS: raise HSTS `max-age` from 300 to 31536000 in
-   `next.config.mjs`. On an apex domain `preload` becomes possible — but do not add
-   it until you are certain every future subdomain will be HTTPS, because it is
-   effectively irreversible.
+   `next.config.mjs`. On an apex domain `preload` becomes possible — but do not
+   add it until you are certain every future subdomain will be HTTPS, because it
+   is effectively irreversible.
 6. After a clean CSP report-only run at 390px and 1440px: promote
    `Content-Security-Policy-Report-Only` to `Content-Security-Policy` and re-add
    `upgrade-insecure-requests`.
@@ -270,7 +313,7 @@ the `noindex`.
 | Mail stops working | Check the MX records in Vercel DNS. The zone moved; TopHost's Zone Editor no longer applies to this domain. |
 | Certificate never issues | Check for a CAA record on the apex that excludes Let's Encrypt |
 | Lead delivery failing | Watch `delivery=` in the Vercel runtime logs and the Resend dashboard daily for the first week. Any `failed` or `not_configured` is a same-day incident — a lost lead cannot be recovered. |
-| Indexed too early | `GATE_A_COMPLETE = false`, push. Then use Search Console **Removals** for a temporary block, and keep `robots.txt` permissive so the `noindex` is actually readable. |
+| Indexed too early | `GATE_A_COMPLETE = false`, push — or, faster, clear `CONFIRMED_PRODUCTION_HOST` in Vercel and redeploy. Then Search Console **Removals** for a temporary block, and keep `robots.txt` permissive so the `noindex` is actually readable. |
 
 ---
 

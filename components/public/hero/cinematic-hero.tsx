@@ -10,6 +10,7 @@ import {
   toPublicDTO,
 } from "@/lib/hero";
 import { Arrow, Button, Container } from "@/components/public/ui";
+import { CallButton } from "@/components/public/cta";
 import { CinematicHeroControls } from "@/components/public/hero/cinematic-hero-controls";
 
 // Full-window cinematic hero (spec 29). Server Component:
@@ -81,11 +82,16 @@ export function CinematicHero({ locale }: { locale: Locale }) {
         <p className="mt-6 max-w-xl text-lead text-canvas/90">
           {copy.description}
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
+        {/* Two ways to convert, side by side, above the fold. The phone was
+            previously reachable only from the sticky bar on mobile and from the
+            footer on desktop — for a trade hired by phone, that is the wrong
+            place for it. */}
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <Button href={heroCta.primary} variant="bronze">
             {copy.primaryCta} <Arrow />
           </Button>
-          <Button href={heroCta.secondary} variant="ghost-light">
+          <CallButton variant="ghost-light" />
+          <Button href={heroCta.secondary} variant="ghost-light" className="hidden sm:inline-flex">
             {copy.secondaryCta}
           </Button>
         </div>

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { nav, navHref, site } from "@/lib/content";
+import { contactHash, nav, navHref, navPages, phone, publicChannels, site } from "@/lib/content";
 import { localeLabels, locales, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/public/ui";
+import { PhoneGlyph } from "@/components/public/cta";
 
 // Two-state header (spec 29 §4): transparent (light-on-dark) over the cinematic
 // hero, solid (ink-on-canvas) after a short scroll. Pages without a #cinematic-hero
@@ -28,6 +29,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // The phone must be reachable from the header on every page. A tile setter is
+  // hired by phone, and the number was previously visible only after scrolling
+  // to the footer or opening the mobile menu.
+  const phoneChannel = publicChannels.find((c) => c.type === "phone");
+
   const shell = solid
     ? "site-header--solid border-b border-line/80 bg-canvas/85 backdrop-blur supports-[backdrop-filter]:bg-canvas/70"
     : "bg-gradient-to-b from-ink/70 via-ink/40 to-transparent";
@@ -39,10 +45,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   // bronze-light is 2.15:1 on the solid header's canvas — a fail. bronze-deep is
   // 5.94:1 there, and bronze-light is 7.49:1 over the ink scrim.
   const descriptor = solid ? "text-bronze-deep" : "text-bronze-light";
+  const phoneLink = solid
+    ? "text-ink hover:text-bronze-deep"
+    : "text-canvas hover:text-bronze-light";
 
   return (
     <header className={`transition-colors duration-300 ${shell}`}>
-      <div className="mx-auto flex max-w-[78rem] items-center justify-between gap-6 px-5 py-4 sm:px-8 lg:px-10">
+      <div className="mx-auto flex max-w-[78rem] items-center justify-between gap-4 px-5 py-4 sm:gap-6 sm:px-8 lg:px-10">
         <Link href={`/${locale}`} className="group flex items-baseline gap-2" aria-label={site.name}>
           <span className={`font-display text-xl font-semibold tracking-tight ${brand}`}>{site.name}</span>
           {/* Always visible, including on phones: "SemiDom" is abstract and
@@ -55,7 +64,16 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-7 lg:flex" aria-label="Navigație principală">
+        <nav className="hidden items-center gap-6 lg:flex" aria-label="Navigație principală">
+          {navPages.map((item) => (
+            <Link
+              key={item.path}
+              href={`/${locale}${item.path}`}
+              className={`text-sm font-medium transition-colors ${navLink}`}
+            >
+              {item.label}
+            </Link>
+          ))}
           {nav.map((item) => (
             <Link
               key={item.hash}
@@ -67,8 +85,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-1 text-xs sm:flex" aria-label="Limbă">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden items-center gap-1 text-xs xl:flex" aria-label="Limbă">
             {locales.map((l) => (
               <Link
                 key={l}
@@ -84,8 +102,32 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             ))}
           </div>
 
+          {/* Desktop: the number spelled out, because people read it and dial on
+              another device. Mobile: an icon-only tap target, because there the
+              number is redundant next to the sticky "Sună" bar. */}
+          {phoneChannel ? (
+            <>
+              <a
+                href={phoneChannel.href}
+                className={`hidden items-center gap-2 text-sm font-semibold tracking-wide transition-colors sm:inline-flex ${phoneLink}`}
+              >
+                <PhoneGlyph />
+                {phone.display}
+              </a>
+              <a
+                href={phoneChannel.href}
+                aria-label={`Sună la ${phone.display}`}
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-xs border transition-colors sm:hidden ${menuBtn}`}
+              >
+                <PhoneGlyph className="h-[1.15rem] w-[1.15rem]" />
+              </a>
+            </>
+          ) : null}
+
           <div className="hidden sm:block">
-            <Button href={navHref(locale, "#contact")} variant="bronze">
+            {/* Relative hash: every public route renders id="contact", so this
+                scrolls in place instead of navigating back to the homepage. */}
+            <Button href={contactHash} variant="bronze">
               Cere o estimare
             </Button>
           </div>
@@ -111,20 +153,40 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       </div>
 
       {open ? (
-        <div id="mobile-menu" className="border-t border-line bg-canvas-raised lg:hidden">
+        <div id="mobile-menu" className="max-h-[calc(100svh-4.5rem)] overflow-y-auto border-t border-line bg-canvas-raised lg:hidden">
           <nav className="mx-auto flex max-w-[78rem] flex-col px-5 py-3 sm:px-8" aria-label="Navigație mobilă">
+            {navPages.map((item) => (
+              <Link
+                key={item.path}
+                href={`/${locale}${item.path}`}
+                onClick={() => setOpen(false)}
+                className="border-b border-line/70 py-3 text-base font-semibold text-ink"
+              >
+                {item.label}
+              </Link>
+            ))}
             {nav.map((item) => (
               <Link
                 key={item.hash}
                 href={navHref(locale, item.hash)}
                 onClick={() => setOpen(false)}
-                className="border-b border-line/70 py-3 text-base font-medium text-ink-soft last:border-0"
+                className="border-b border-line/70 py-3 text-base font-medium text-ink-soft"
               >
                 {item.label}
               </Link>
             ))}
+            {phoneChannel ? (
+              <a
+                href={phoneChannel.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 border-b border-line/70 py-3 text-base font-semibold text-ink"
+              >
+                <PhoneGlyph />
+                {phone.display}
+              </a>
+            ) : null}
             <div className="mt-3 pb-2">
-              <Button href={navHref(locale, "#contact")} variant="bronze" className="w-full">
+              <Button href={contactHash} variant="bronze" className="w-full">
                 Cere o estimare
               </Button>
             </div>

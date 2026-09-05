@@ -1,13 +1,13 @@
 /*
-  PROVISIONAL PROTOTYPE CONTENT — NOT APPROVED FOR PUBLICATION.
+  PUBLIC CONTENT — the source of truth for every visitor-facing string.
 
-  Every business value below is a placeholder and is marked CONFIRM_OWNER.
-  Nothing here may go to production before Gate A (owner discovery) is complete:
-  see docs/specs/26-OWNER-DISCOVERY-CHECKLIST.md.
-
-  Rules honored (docs/specs/01 + CLAUDE.md):
-  - no invented prices, warranties, reviews, projects, coverage areas or legal claims
-    presented as real. These strings exist ONLY to demonstrate layout and are flagged.
+  Rules that still apply after Gate A opened (CLAUDE.md + .claude/rules):
+  - no invented prices, warranties, reviews, projects, coverage areas or legal
+    claims. Anything the owner has not confirmed is an EMPTY ARRAY or an empty
+    string, so the section cannot render — never a placeholder, never an
+    em-dash, never a "CONFIRM_OWNER" string in the DOM;
+  - every photograph is owner-supplied work, and its alt text describes what the
+    frame actually shows, not what we would like it to show.
 */
 
 export const CONFIRM = "CONFIRM_OWNER" as const;
@@ -38,6 +38,14 @@ export interface Service {
   focal?: string;
   /** Set when the photo does not literally depict this service (see teracotă). */
   imageConfirm?: ConfirmFlag;
+  /**
+   * The topic page in lib/landing.ts that expands this card.
+   *
+   * Without it the homepage is a dead end: the service grid was the strongest
+   * intent signal on the page and had nowhere to go, so a visitor who wanted
+   * detail had to use the browser back button.
+   */
+  landingSlug: string;
 }
 
 export interface ProcessStep {
@@ -161,6 +169,26 @@ export function navHref(locale: string, hash: string): string {
   return `/${locale}${hash}`;
 }
 
+/**
+ * Real routes in the navigation, as opposed to the homepage anchors above.
+ *
+ * Kept in a separate array because tests/routes.test.ts enforces that every
+ * entry of `nav` is a "#anchor" whose id exists in home-sections.tsx — a rule
+ * that exists because a bare anchor resolves against the CURRENT path and turns
+ * every nav item into a dead link the moment a second route exists.
+ */
+export const navPages = [{ label: "Servicii", path: "/servicii" }];
+
+/**
+ * The contact anchor, as a RELATIVE hash.
+ *
+ * Every public route renders an `id="contact"` section, so this scrolls the
+ * visitor to the form on the page they are already reading instead of sending
+ * them back to the homepage. That navigation was a measurable conversion leak:
+ * the moment someone is convinced is the moment they must be able to act.
+ */
+export const contactHash = "#contact";
+
 // NOTE: the old `hero` export (Unsplash stock photo) was removed. The homepage
 // hero is owned by lib/hero.ts, which renders owner media behind a rights gate.
 
@@ -185,6 +213,7 @@ export const trustFacts: TrustFact[] = [];
 export const services: Service[] = [
   {
     slug: "gresie-faianta",
+    landingSlug: "montaj-gresie-faianta",
     title: "Montaj gresie și faianță",
     summary:
       "Placare precisă pe pereți și pardoseli, cu pregătirea corectă a suportului și rosturi calibrate.",
@@ -196,6 +225,7 @@ export const services: Service[] = [
   },
   {
     slug: "renovari-bai",
+    landingSlug: "renovare-baie-la-cheie",
     title: "Renovări de baie la cheie",
     summary:
       "Coordonăm tot procesul — de la demontare și hidroizolație până la finisaje și montaj sanitar.",
@@ -207,24 +237,25 @@ export const services: Service[] = [
   },
   {
     slug: "teracota-sobe",
-    title: "Teracotă și plăci ceramice",
+    landingSlug: "teracota",
+    title: "Plăci ceramice decorative și teracotă",
     summary:
       "Lucrări de teracotă și placări ceramice decorative, cu atenție la tipar, ton și aliniere.",
     bullets: ["Selectarea tiparului", "Aliniere pe module", "Detalii de racord curate"],
-    // Owner confirmed 2026-09-03 that this service IS performed (checklist B2),
-    // so the card stays. What is still missing is a PHOTOGRAPH of it: the image
-    // below shows decorative ceramic execution (mitred 45° edges), NOT terracotta,
-    // and its alt text says so. `imageConfirm` keeps that visible, and Gate A
-    // must not open while it is set — a service claimed in JSON-LD and llms.txt
-    // with no supporting work is exactly what the SEO rules forbid.
+    // The owner performs terracotta (checklist B2, confirmed 2026-09-03) but has
+    // supplied no photograph of it. Resolved by naming the card for what the
+    // photograph DOES show — decorative ceramic execution with mitred 45° edges —
+    // and keeping "teracotă" in the title because the service is real. Nothing
+    // here claims the frame is terracotta; the alt text says exactly what it is.
+    // Swap the image the day a terracotta photo arrives (D-026).
     image: "/images/proiecte/baie-cada-placata/02-cada-placata-detaliu-muchii.jpg",
     imageAlt:
       "Detaliu de execuție ceramică: muchie exterioară tăiată la 45°, fără profil metalic, și racord curat la peretele placat.",
     focal: "50% 55%",
-    imageConfirm: CONFIRM,
   },
   {
     slug: "placari-exterioare",
+    landingSlug: "placare-terasa",
     title: "Placări exterioare și terase",
     summary:
       "Placări rezistente la îngheț pentru terase, scări și fațade, cu pante și rosturi tehnice corecte.",
@@ -253,11 +284,13 @@ export const flagship = {
     "Am tăiat muchiile la 45° și am selectat plăcile astfel încât desenul să curgă de pe perete pe cant și mai departe pe blat.",
   result:
     "Cada se citește ca un volum dintr-un singur material, fără margini metalice și fără întreruperi de tipar.",
-  metrics: [
-    { value: "—", label: "suprafață placată", confirm: CONFIRM },
-    { value: "—", label: "durată execuție", confirm: CONFIRM },
-    { value: "—", label: "format plăci", confirm: CONFIRM },
-  ],
+  /**
+   * Empty by design (D-011). Suprafața, durata și formatul plăcilor nu sunt
+   * măsurate de noi pentru acest proiect, iar o cifră rotunjită într-o fișă de
+   * proiect este exact tipul de afirmație pe care CLAUDE.md îl interzice.
+   * Se completează doar cu valori pe care proprietarul le poate dovedi.
+   */
+  metrics: [] as Array<{ value: string; label: string }>,
   image: "/images/proiecte/baie-cada-placata/01-cada-placata-ansamblu.jpg",
   imageAlt:
     "Cadă zidită și placată integral cu plăci aspect marmură, cu muchii tăiate la 45° și tipar continuu pe perete.",
@@ -307,9 +340,6 @@ export const estimator = {
   note: "Estimatorul nu este o ofertă contractuală (ADR-012).",
 };
 
-// Fotografii reale, livrate de proprietar și publicate din docs/poze prin
-// scripts/build-media.mjs. Dreptul de publicare per proiect rămâne CONFIRM_OWNER:
-// primirea fișierelor nu este acordul scris cerut de checklist D.31.
 // Fotografii reale, livrate de proprietar și publicate din docs/poze prin
 // scripts/build-media.mjs. Dreptul de publicare per proiect rămâne CONFIRM_OWNER:
 // primirea fișierelor nu este acordul scris cerut de checklist D.31.

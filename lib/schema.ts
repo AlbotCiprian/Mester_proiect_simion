@@ -20,11 +20,17 @@ import type { Locale } from "@/lib/i18n";
  * - `LocalBusiness` / `HomeAndConstructionBusiness` — needs `areaServed` (B4)
  *   and a legal name (A1/A4). A service-area business must NOT emit a street
  *   address, and inventing one is worse than omitting the type.
- * - `Service` / `Offer` — needs the confirmed service list (B1/B2) and prices (C).
- * - `FAQPage` — the FAQ is empty by design until the owner answers.
+ * - `Offer` / any `price` property — no price is confirmed, and an invented one
+ *   is a consumer-protection exposure, not an SEO detail.
  * - `SearchAction` — there is no site search, and Google retired the sitelinks
  *   searchbox.
- * - `BreadcrumbList` — two pages; it would be noise.
+ *
+ * EMITTED SINCE THE TOPIC PAGES SHIPPED (2026-09-05):
+ * - `Service` — one per topic page, describing what that page visibly says.
+ *   No `offers`, no `priceRange`, no `aggregateRating`.
+ * - `FAQPage` — only where the page actually renders the same Q/A on screen.
+ *   Markup that does not match visible content is a manual-action risk.
+ * - `BreadcrumbList` — now that routes are nested, it describes real structure.
  */
 
 type Json = Record<string, unknown>;
@@ -120,4 +126,90 @@ export function servicesItemListSchema(locale: Locale): Json {
 /** Wraps the graph in the envelope Google expects. */
 export function jsonLdGraph(nodes: Json[]): string {
   return JSON.stringify({ "@context": "https://schema.org", "@graph": nodes });
+}
+
+/**
+ * One topic page, as `Service`.
+ *
+ * `provider` points at the Organization node by @id rather than repeating it,
+ * so the graph holds ONE organisation and every topic page is an edge to it.
+ * `areaServed` carries the phrasing the owner himself used — deliberately not
+ * a list of named localities we cannot evidence (checklist B4).
+ */
+export function serviceSchema(
+  locale: Locale,
+  opts: { path: string; name: string; description: string },
+): Json {
+  return compact({
+    "@type": "Service",
+    "@id": `${canonicalFor(locale, opts.path)}#service`,
+    name: opts.name,
+    description: opts.description,
+    serviceType: opts.name,
+    provider: { "@id": `${absoluteUrl("/")}#organization` },
+    areaServed: site.serviceArea,
+    url: canonicalFor(locale, opts.path),
+    // No offers, no priceRange, no aggregateRating. See the header block.
+  });
+}
+
+/**
+ * FAQ markup. Emit ONLY with the questions the page renders on screen, in the
+ * same wording: Google treats markup that does not match visible content as
+ * spam, and a manual action lands on the site, not on the page.
+ */
+export function faqPageSchema(
+  locale: Locale,
+  opts: { path: string; faqs: ReadonlyArray<{ q: string; a: string }> },
+): Json | null {
+  if (opts.faqs.length === 0) return null;
+  return {
+    "@type": "FAQPage",
+    "@id": `${canonicalFor(locale, opts.path)}#faq`,
+    mainEntity: opts.faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: { "@type": "Answer", text: faq.a },
+    })),
+  };
+}
+
+/** Breadcrumbs, ordered from the site root to the current page. */
+export function breadcrumbSchema(
+  locale: Locale,
+  items: ReadonlyArray<{ name: string; path: string }>,
+): Json {
+  const last = items[items.length - 1];
+  return {
+    "@type": "BreadcrumbList",
+    "@id": `${canonicalFor(locale, last ? last.path : "")}#breadcrumb`,
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: canonicalFor(locale, item.path),
+    })),
+  };
+}
+
+/**
+ * The topic-page hub, as ItemList. Same rule as servicesItemListSchema: it
+ * describes what the hub visibly lists and makes no claim of its own.
+ */
+export function landingItemListSchema(
+  locale: Locale,
+  pages: ReadonlyArray<{ slug: string; h1: string; metaDescription: string }>,
+): Json {
+  return {
+    "@type": "ItemList",
+    "@id": `${canonicalFor(locale, "/servicii")}#list`,
+    name: "Servicii și lucrări",
+    itemListElement: pages.map((page, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: page.h1,
+      description: page.metaDescription,
+      url: canonicalFor(locale, `/servicii/${page.slug}`),
+    })),
+  };
 }

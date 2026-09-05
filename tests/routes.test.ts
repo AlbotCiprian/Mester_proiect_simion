@@ -47,7 +47,9 @@ describe("sitemap", () => {
     const real = realRouteSegments();
     for (const declaredPath of declared) {
       if (declaredPath === "") continue; // the homepage is [locale]/page.tsx
-      const segment = declaredPath.replace(/^\//, "");
+      // First segment only: a nested route like /servicii/<slug> lives under the
+      // /servicii directory and its second half is a dynamic segment.
+      const segment = declaredPath.replace(/^\//, "").split("/")[0] ?? "";
       assert.ok(
         real.includes(segment),
         `sitemap lists "${declaredPath}" but app/(public)/[locale]/${segment}/page.tsx does not exist`,
@@ -59,6 +61,31 @@ describe("sitemap", () => {
     for (const declaredPath of declared) {
       assert.ok(!declaredPath.includes("#"), `"${declaredPath}" is an anchor, not a route`);
     }
+  });
+
+  it("derives the topic pages from lib/landing.ts, not from a second typed list", () => {
+    // The route module builds its static params from the same array. A second
+    // hand-maintained list here is exactly how a sitemap comes to advertise a
+    // URL that 404s — which is incident 1 above, in a new costume.
+    assert.match(
+      source,
+      /import\s*\{[^}]*landingSlugs[^}]*\}\s*from\s*"@\/lib\/landing"/,
+      "sitemap must import landingSlugs",
+    );
+
+    const routeFile = "app/(public)/[locale]/servicii/[slug]/page.tsx";
+    assert.ok(existsSync(path.join(ROOT, routeFile)), `${routeFile} must exist`);
+    const route = read(routeFile);
+    assert.match(
+      route,
+      /import\s*\{[^}]*landingSlugs[^}]*\}\s*from\s*"@\/lib\/landing"/,
+      "the route must generate its params from the same array the sitemap uses",
+    );
+    assert.match(
+      route,
+      /export const dynamicParams = false/,
+      "an open dynamic segment renders a thin page for any URL somebody guesses",
+    );
   });
 
   it("is driven off publishedLocales, never the full locale list", () => {
@@ -102,6 +129,38 @@ describe("navigation", () => {
       );
     }
   });
+
+  it("every navPages entry points at a route that exists", () => {
+    const content = read("lib/content.ts");
+    const block = content.slice(content.indexOf("export const navPages = ["));
+    const paths = [...block.slice(0, block.indexOf("];")).matchAll(/path:\s*"\/([^"]*)"/g)];
+    assert.ok(paths.length > 0, "navPages must declare at least one route");
+    const real = realRouteSegments();
+    for (const [, segment] of paths) {
+      assert.ok(real.includes(segment ?? ""), `navPages points at /${segment}, which has no page`);
+    }
+  });
+});
+
+describe("the contact anchor resolves on every public route", () => {
+  /**
+   * The header CTA and the mobile bar use a RELATIVE "#contact". That is a
+   * deliberate conversion decision — it keeps a reader on the page they are
+   * reading — and it turns into a dead button the moment a route ships without
+   * the target. So the target is a build-time requirement, not a convention.
+   */
+  const sources: Array<[string, string]> = [
+    ["homepage", "components/public/home-sections.tsx"],
+    ["topic page", "components/public/landing-sections.tsx"],
+    ["services hub", "app/(public)/[locale]/servicii/page.tsx"],
+    ["privacy notice", "app/(public)/[locale]/confidentialitate/page.tsx"],
+  ];
+
+  for (const [name, file] of sources) {
+    it(`${name} renders id="contact"`, () => {
+      assert.match(read(file), /id="contact"/, `${file} has no #contact target`);
+    });
+  }
 });
 
 describe("Gate A preconditions are enforced by code, not by a checklist", () => {
@@ -132,5 +191,17 @@ describe("Gate A preconditions are enforced by code, not by a checklist", () => 
     if (!gateOpen) return;
     const content = read("lib/content.ts");
     assert.doesNotMatch(content, /value:\s*"—"/, "Gate A is open but a placeholder metric remains");
+  });
+
+  it("does not open while a visitor-facing CONFIRM_OWNER string would render", () => {
+    if (!gateOpen) return;
+    // The flag on the TYPE and the constant that defines it are fine; a value
+    // assigned into rendered content is not.
+    const content = read("lib/content.ts");
+    assert.doesNotMatch(
+      content,
+      /(title|summary|label|body|quote|value):\s*(CONFIRM|"CONFIRM_OWNER")/,
+      "Gate A is open but a rendered field is still a CONFIRM_OWNER placeholder",
+    );
   });
 });

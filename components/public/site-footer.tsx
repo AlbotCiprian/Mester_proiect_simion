@@ -1,29 +1,55 @@
 import Link from "next/link";
-import { publicChannels, nav, navHref, site } from "@/lib/content";
+import { publicChannels, nav, navHref, navPages, phone, site } from "@/lib/content";
+import { landingPages } from "@/lib/landing";
 import { defaultLocale, publishedLocales, type Locale } from "@/lib/i18n";
 import { Container } from "@/components/public/ui";
+import { PhoneGlyph } from "@/components/public/cta";
 
 // Only pages that exist. "Cookies" is intentionally absent: the site sets no
-// cookies, so the page would only advertise a consent banner we do not need.
-// "Termeni" is blocked on the legal entity (checklist A4).
+// cookies, and the privacy page now says so in its own section — a separate
+// page would only advertise a consent banner we do not need.
+// "Termeni" stays blocked on a decision the owner has not made.
 const legal = [{ label: "Confidențialitate", path: "/confidentialitate" }];
 
 export function SiteFooter({ locale }: { locale: Locale }) {
+  const linkLocale = publishedLocales.includes(locale) ? locale : defaultLocale;
+  const phoneChannel = publicChannels.find((c) => c.type === "phone");
+
   return (
     <footer className="bg-ink text-canvas">
       <Container className="py-16">
-        <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="grid gap-12 md:grid-cols-[1.3fr_1fr_1fr]">
           <div>
             <p className="font-display text-2xl font-semibold">{site.name}</p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-canvas/70">{site.tagline}.</p>
-            <p className="mt-4 text-sm text-canvas/55">
-              {site.serviceArea}
-            </p>
+            <p className="mt-4 text-sm text-canvas/55">{site.serviceArea}</p>
+
+            {/* The number, large and first. It is the primary conversion action
+                and it was previously one line item in a list of links. */}
+            {phoneChannel ? (
+              <a
+                href={phoneChannel.href}
+                className="mt-6 inline-flex items-center gap-2.5 font-display text-2xl font-semibold text-canvas transition-colors hover:text-bronze-light"
+              >
+                <PhoneGlyph className="h-5 w-5" />
+                {phone.display}
+              </a>
+            ) : null}
           </div>
 
           <nav aria-label="Footer — pagini" className="text-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-canvas/50">Navigare</p>
             <ul className="mt-4 space-y-2.5">
+              {navPages.map((item) => (
+                <li key={item.path}>
+                  <Link
+                    href={`/${linkLocale}${item.path}`}
+                    className="font-medium text-canvas/90 transition-colors hover:text-canvas"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
               {nav.map((item) => (
                 <li key={item.hash}>
                   <Link
@@ -51,7 +77,28 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-4 border-t border-canvas/15 pt-6 text-xs text-canvas/55 sm:flex-row sm:items-center sm:justify-between">
+        {/* Every topic page, one click from every page on the site.
+            This is the internal-linking layer: a page reachable only from the
+            sitemap gets crawled late and ranked worse than one linked sitewide. */}
+        <nav aria-label="Footer — servicii" className="mt-14 border-t border-canvas/15 pt-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-canvas/50">
+            Lucrări pe care le executăm
+          </p>
+          <ul className="mt-5 grid gap-x-8 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {landingPages.map((page) => (
+              <li key={page.slug}>
+                <Link
+                  href={`/${linkLocale}/servicii/${page.slug}`}
+                  className="text-sm text-canvas/70 transition-colors hover:text-canvas"
+                >
+                  {page.h1}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="mt-12 flex flex-col gap-4 border-t border-canvas/15 pt-6 text-xs text-canvas/55 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {site.name}
           </p>
@@ -61,7 +108,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                 {/* An unpublished locale has no legal pages, so the link must point
                     at one that does — otherwise /ru links to a 404. */}
                 <Link
-                  href={`/${publishedLocales.includes(locale) ? locale : defaultLocale}${item.path}`}
+                  href={`/${linkLocale}${item.path}`}
                   className="transition-colors hover:text-canvas"
                 >
                   {item.label}
