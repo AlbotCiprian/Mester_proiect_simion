@@ -148,14 +148,38 @@ export async function deliverLead(lead: Lead, meta: LeadMeta): Promise<DeliveryO
     // kills it — the visitor needs the "undelivered" branch and the phone number.
     const { error } = await withTimeout(
       resend.emails.send({
+        /**
+         * `from` is ALWAYS the configured sender and must live on a domain
+         * verified in Resend. It is NOT the customer's address, and it must
+         * never become one: Resend rejects an unverified sender outright, so
+         * the mail would simply stop being delivered — and if it were somehow
+         * accepted, sending as an address we do not control fails SPF and DKIM,
+         * lands in spam, and burns the domain's sending reputation. This is the
+         * single most common way a working contact form gets broken.
+         */
         from: env.leadFromEmail!,
         to: [env.leadToEmail!],
+        /**
+         * `replyTo` IS the customer, when they gave an address.
+         *
+         * This reverses an earlier decision, deliberately. The old rule was "no
+         * replyTo, because a submitter-controlled reply address lets an attacker
+         * receive the owner's reply". That risk is real but small — the reply
+         * contains a quote, not a secret — and it was being paid for with the
+         * thing the owner actually needs every day: hitting Reply and reaching
+         * the person who wrote in. Without it he has to retype the address from
+         * the body of the mail, which is where it already is.
+         *
+         * Safe because the value is not free text: zod validated it as an
+         * e-mail, `clean()` stripped control characters, and Resend takes JSON,
+         * so there is no header to inject into. The address is also printed in
+         * the body, so the owner can always see who he is about to answer.
+         */
+        ...(lead.email ? { replyTo: lead.email } : {}),
         subject,
         text: renderText(rows),
         html: renderHtml(rows),
-        // Deliberately NO replyTo, cc or bcc. `to` and `from` are always the
-        // configured addresses: a submitter-controlled reply address would let
-        // an attacker receive the owner's reply by making him hit Reply.
+        // Still no cc or bcc: nothing about a lead should reach a third party.
       }),
       SEND_TIMEOUT_MS,
     );
