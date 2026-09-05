@@ -15,8 +15,12 @@ const IS_PROD = process.env.VERCEL_ENV === "production";
  * X-Robots-Tag is emitted whenever the site is not indexable, so the instruction
  * travels on every response and a stray inbound link cannot bypass it.
  */
-const { indexable: IS_INDEXABLE, reason: INDEXABILITY_REASON } = indexabilityFromEnv();
-console.log(`[build] indexable=${IS_INDEXABLE} (${INDEXABILITY_REASON})`);
+const {
+  indexable: IS_INDEXABLE,
+  reason: INDEXABILITY_REASON,
+  code: INDEXABILITY_CODE,
+} = indexabilityFromEnv();
+console.log(`[build] indexable=${IS_INDEXABLE} code=${INDEXABILITY_CODE} (${INDEXABILITY_REASON})`);
 
 /*
  * 'unsafe-inline' in script-src is a KNOWN, RECORDED GAP, not an oversight.
@@ -65,10 +69,16 @@ const securityHeaders = [
 ];
 
 const environmentHeaders = [
-  // Ramp: 300 for 24-48h to prove nothing on the subdomain needs plain HTTP,
-  // then 31536000. NEVER add `preload` — the preload list only accepts apex
-  // domains, so from a subdomain the directive is inert, and acting on it
-  // would force HTTPS on every sibling subdomain, which is not our call.
+  // Ramp: 300 for 24-48h to prove nothing on semidom.md needs plain HTTP, then
+  // 31536000.
+  //
+  // `preload` is deliberately absent, and the reason CHANGED with D-022: the
+  // old note said the directive was inert because we sat on a subdomain.
+  // semidom.md is an apex, so it would now be honoured — which is exactly why
+  // it stays off. Submitting to the preload list is effectively irreversible
+  // (removal takes months and ships to users only on browser updates), it
+  // covers every future subdomain including a mail host, and it requires
+  // max-age=31536000. Revisit only after the year-long max-age has run clean.
   ...(IS_PROD ? [{ key: "Strict-Transport-Security", value: "max-age=300" }] : []),
   ...(IS_INDEXABLE ? [] : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]),
 ];

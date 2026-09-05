@@ -18,7 +18,7 @@ import { ContactBand } from "@/components/public/cta";
  */
 
 /** CONFIRMED by the owner, 2026-09-05 (checklist A4). */
-const LEGAL_ENTITY = "Simion Barbacaru";
+const LEGAL_ENTITY = "Simion Bărbăcaru";
 const LEGAL_FORM = "persoană fizică";
 const LEGAL_IDNP = "0990903223519";
 /**

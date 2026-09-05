@@ -28,12 +28,32 @@ export const INDEXABLE: boolean = verdict.indexable;
  */
 export const INDEXABLE_REASON: string = verdict.reason;
 
+/**
+ * Fail the build ONLY on a host MISMATCH.
+ *
+ * A mismatch means both variables are set and they disagree — by a scheme, a
+ * trailing slash or a capital letter. That is a typo, it produces a green build
+ * and a site nobody can find, and no other signal reports it. Worth stopping.
+ *
+ * Unset variables are a different thing entirely and this originally conflated
+ * the two: the first production build after Gate A opened failed with
+ * "CONFIRMED_PRODUCTION_HOST is unset" and made the project undeployable until
+ * someone opened the Vercel dashboard — while the deployed site sat stale. Not
+ * configured yet is SAFE: the site ships noindex, which is exactly what it
+ * should do before the domain is live. So it warns, loudly, and builds.
+ */
 if (process.env.VERCEL_ENV === "production" && GATE_A_COMPLETE && !verdict.indexable) {
-  // Gate A was deliberately opened but something else disagrees — almost always
-  // the two host variables differing by a scheme, a slash or a capital letter.
-  throw new Error(
-    `[seo] GATE_A_COMPLETE is true on a production deployment but the site would still be noindex: ${verdict.reason}. ` +
-      `Fix NEXT_PUBLIC_SITE_URL / CONFIRMED_PRODUCTION_HOST and redeploy — both are read at BUILD time.`,
+  if (verdict.code === "host-mismatch") {
+    throw new Error(
+      `[seo] ${verdict.reason}. Both host variables are set and they disagree, so this build ` +
+        `would deploy a site Google can never index. Fix NEXT_PUBLIC_SITE_URL / ` +
+        `CONFIRMED_PRODUCTION_HOST and redeploy — both are read at BUILD time.`,
+    );
+  }
+  console.warn(
+    `[seo] NOT INDEXABLE on a production deployment: ${verdict.reason}. ` +
+      `Gate A is open, so this is the last thing standing between the site and Google. ` +
+      `Set NEXT_PUBLIC_SITE_URL and CONFIRMED_PRODUCTION_HOST (Production scope) and redeploy.`,
   );
 }
 

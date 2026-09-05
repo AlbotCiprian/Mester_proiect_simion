@@ -65,43 +65,72 @@ export function normalizeHost(value) {
  * Returns a reason when false, so the build can explain itself instead of
  * silently shipping a site nobody can find.
  *
+ * It also returns a machine-readable `code`, because the CALLER has to tell two
+ * very different situations apart and a prose reason cannot be matched on:
+ *
+ *   "host-mismatch" — both variables are set and they disagree. That is a typo,
+ *     it produces a green build and an invisible site, and lib/seo.ts fails the
+ *     build over it.
+ *   "host-unset" / "site-url-unset" — the deployment has not been configured
+ *     yet. That is the ordinary state of a project between opening Gate A and
+ *     setting the variables, it is SAFE (the site ships noindex), and failing
+ *     the build over it would make the project undeployable for exactly as long
+ *     as the owner takes to open the Vercel dashboard. Warn, do not throw.
+ *
  * @typedef {object} IndexabilityInput
  * @property {string} [vercelEnv]      VERCEL_ENV, or undefined outside Vercel.
  * @property {string} [siteUrl]        NEXT_PUBLIC_SITE_URL, full origin.
  * @property {string} [confirmedHost]  CONFIRMED_PRODUCTION_HOST, host only.
  * @property {boolean} [gateA]         Defaults to GATE_A_COMPLETE.
  *
+ * @typedef {"ok" | "not-production" | "gate-closed" | "host-unset"
+ *           | "site-url-unset" | "host-mismatch"} IndexabilityCode
+ *
  * @typedef {object} IndexabilityVerdict
  * @property {boolean} indexable
  * @property {string} reason
+ * @property {IndexabilityCode} code
  *
  * @param {IndexabilityInput} input
  * @returns {IndexabilityVerdict}
  */
 export function indexability({ vercelEnv, siteUrl, confirmedHost, gateA = GATE_A_COMPLETE } = {}) {
   if (vercelEnv !== "production") {
-    return { indexable: false, reason: `VERCEL_ENV is "${vercelEnv ?? "unset"}", not "production"` };
+    return {
+      indexable: false,
+      code: "not-production",
+      reason: `VERCEL_ENV is "${vercelEnv ?? "unset"}", not "production"`,
+    };
   }
   if (!gateA) {
-    return { indexable: false, reason: "GATE_A_COMPLETE is false" };
+    return { indexable: false, code: "gate-closed", reason: "GATE_A_COMPLETE is false" };
   }
 
   const expected = normalizeHost(confirmedHost);
   if (!expected) {
-    return { indexable: false, reason: "CONFIRMED_PRODUCTION_HOST is unset" };
+    return {
+      indexable: false,
+      code: "host-unset",
+      reason: "CONFIRMED_PRODUCTION_HOST is unset",
+    };
   }
 
   const actual = normalizeHost(siteUrl);
   if (!actual) {
-    return { indexable: false, reason: "NEXT_PUBLIC_SITE_URL is unset or unparseable" };
+    return {
+      indexable: false,
+      code: "site-url-unset",
+      reason: "NEXT_PUBLIC_SITE_URL is unset or unparseable",
+    };
   }
   if (actual !== expected) {
     return {
       indexable: false,
+      code: "host-mismatch",
       reason: `host mismatch: NEXT_PUBLIC_SITE_URL resolves to "${actual}", CONFIRMED_PRODUCTION_HOST is "${expected}"`,
     };
   }
-  return { indexable: true, reason: "production, host confirmed, Gate A open" };
+  return { indexable: true, code: "ok", reason: "production, host confirmed, Gate A open" };
 }
 
 /**
