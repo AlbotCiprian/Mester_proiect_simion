@@ -157,11 +157,18 @@ export const publicChannels = channels.filter((c) => c.confirmed);
  * second route exists.
  */
 export const nav = [
-  { label: "Servicii", hash: "#servicii" },
+  // "Servicii" is deliberately NOT here. It lives in `navPages` below, pointing
+  // at the real /servicii hub: the header renders navPages first and then nav,
+  // so an anchor with the same label rendered a duplicate "Servicii Servicii"
+  // in the desktop bar. The route wins because it is crawlable, carries the
+  // fifteen topic pages, and the homepage section is still one scroll away.
   { label: "Proiecte", hash: "#proiecte" },
   { label: "Proces", hash: "#proces" },
   { label: "Cum calculăm", hash: "#preturi" },
-  { label: "Proiect", hash: "#despre" },
+  // "Studiu de caz", not "Proiect": sitting two items away from "Proiecte" it
+  // was indistinguishable in the bar, and the section is a challenge/solution/
+  // result breakdown of one job, which is what a case study is.
+  { label: "Studiu de caz", hash: "#despre" },
   { label: "Contact", hash: "#contact" },
 ];
 
