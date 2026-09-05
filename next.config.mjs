@@ -145,38 +145,6 @@ const nextConfig = {
     },
   },
 
-  /**
-   * One canonical host.
-   *
-   * Measured on production 2026-09-06: `https://www.semidom.md/ro` returned 200
-   * and served the whole site, topic pages included, instead of redirecting to
-   * the apex. The canonical tag already pointed at `semidom.md`, so Google would
-   * have consolidated eventually — but two hosts answering 200 doubles the crawl
-   * surface, splits any link that lands on www, and makes `Strict-Transport-
-   * Security` and the Server Action origin check reason about two identities.
-   *
-   * In code rather than only in the Vercel dashboard because a dashboard
-   * redirect is invisible from the repository and can be removed by anyone with
-   * project access, with nothing failing to announce it. If the dashboard
-   * redirect is also configured it simply fires first; the two do not conflict.
-   *
-   * Derived from CONFIRMED_PRODUCTION_HOST so a future host change carries this
-   * with it. It is a no-op when the variable is unset, or when the confirmed
-   * host is itself a www host.
-   */
-  async redirects() {
-    const host = (process.env.CONFIRMED_PRODUCTION_HOST ?? "").trim().toLowerCase();
-    if (!host || host.startsWith("www.") || !host.includes(".")) return [];
-    return [
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: `www.${host}` }],
-        destination: `https://${host}/:path*`,
-        permanent: true, // 308: preserves the method, and tells Google to move the signal
-      },
-    ];
-  },
-
   async headers() {
     return [
       { source: "/:path*", headers: [...securityHeaders, ...environmentHeaders] },
