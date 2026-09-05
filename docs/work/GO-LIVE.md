@@ -80,6 +80,38 @@ ever move the nameservers away, that changes — and so does everything below.
 
 ---
 
+## Mail: sending and receiving are two different problems
+
+**This is the distinction that costs people a week.** Measured in the live zone
+on 2026-09-06:
+
+| Record | State | What it buys |
+| --- | --- | --- |
+| MX `send.semidom.md` → `feedback-smtp.eu-west-1.amazonses.com` | ✅ present | Resend can SEND as `@semidom.md` |
+| TXT `send.semidom.md` → `v=spf1 include:amazonses.com ~all` | ✅ present | SPF for that sending path |
+| TXT `resend._domainkey` (DKIM) | ✅ present | signs the outgoing lead mail |
+| **MX `semidom.md` (apex)** | ❌ **absent** | **a mailbox that can RECEIVE** |
+
+Resend's three records were created by its Vercel "Connect Resend" flow. They
+authorise **sending**. They do not create an inbox, and they never will —
+`contact@semidom.md` cannot receive a single message until an APEX MX points at
+a mailbox provider.
+
+So `LEAD_TO_EMAIL=contact@semidom.md` set today would look configured, pass every
+check in this repo, be accepted by Resend, and then bounce. The lead would be
+lost with no visible error, because a bounce happens after the API call returns
+success. Point `LEAD_TO_EMAIL` at an address that exists until the mailbox does.
+
+### The SPF question, answered by measurement
+
+Resend's SPF sits on the `send` subdomain, and the apex has **no TXT record at
+all** right now. So adding a mailbox provider's apex SPF later creates no
+conflict — the "only one SPF record per domain" rule applies per name, and these
+are two different names. Nothing has to be merged.
+
+The one thing that WOULD break it: adding a second SPF TXT at the apex once the
+mailbox provider's is there. One apex SPF, with an `include:` per sender.
+
 ## Stage 2 — decide where the mailbox lives
 
 `contact@semidom.md` has to be hosted somewhere, and that decision drives the MX
