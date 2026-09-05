@@ -11,16 +11,21 @@ import { ContactBand } from "@/components/public/cta";
  * Required before a single phone number is collected: a consent checkbox cannot
  * discharge the information duty on its own.
  *
- * The controller is a NATURAL PERSON, not a company, so the identification is
- * his name plus his IDNP. The IDNP is rendered behind a native <details>
- * disclosure — collapsed by default, expandable by anyone, and working with
- * JavaScript disabled — at the owner's explicit request (D-025).
+ * The controller is a NATURAL PERSON, not a company. Identification is his name
+ * plus a working contact channel — which is what the information duty actually
+ * asks for, and all it asks for.
+ *
+ * THE IDNP IS NOT PUBLISHED AND MUST NOT BE RE-ADDED (D-030). It was here for a
+ * few hours, behind a collapsed reveal, at the owner's explicit request; he
+ * asked for it removed once it was clear nothing requires it. A national
+ * identification number on a public page is a permanent identity-theft surface
+ * that buys nothing: scrapers and search engines pick it up within minutes and
+ * it cannot be recalled. tests/privacy.test.ts fails if it reappears.
  */
 
 /** CONFIRMED by the owner, 2026-09-05 (checklist A4). */
 const LEGAL_ENTITY = "Simion Bărbăcaru";
 const LEGAL_FORM = "persoană fizică";
-const LEGAL_IDNP = "0990903223519";
 /**
  * The address the owner declared for the domain. It must have a real mailbox
  * before go-live — a bouncing controller address is a compliance failure, not a
@@ -71,11 +76,6 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
             ({LEGAL_FORM}), care activează sub denumirea comercială {site.name}, în Republica
             Moldova.
           </P>
-          <Reveal label="Arată IDNP-ul operatorului" hint="Ascuns implicit, îl poți afișa oricând.">
-            <span className="tabular">
-              IDNP {LEGAL_IDNP}
-            </span>
-          </Reveal>
           <P>
             Ne poți contacta la <A href={`tel:${phone.e164}`}>{phone.display}</A> sau la{" "}
             <A href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</A>.
@@ -192,42 +192,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-display-3 text-ink">{title}</h2>
       <div className="mt-3 space-y-3">{children}</div>
     </section>
-  );
-}
-
-/**
- * Hidden-by-default disclosure.
- *
- * Native <details>, not a `useState` toggle: it stays a Server Component, it
- * works with JavaScript disabled, and screen readers and keyboards get the
- * expand/collapse semantics for free. `open` is deliberately never set — the
- * value must be collapsed on first paint on every device.
- */
-function Reveal({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <details className="group rounded-xs border border-line bg-canvas-raised">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:text-ink">
-        <span>
-          {label}
-          {hint ? <span className="mt-0.5 block text-xs font-normal text-muted">{hint}</span> : null}
-        </span>
-        <span
-          aria-hidden="true"
-          className="text-lg leading-none text-bronze transition-transform duration-200 group-open:rotate-45"
-        >
-          +
-        </span>
-      </summary>
-      <div className="border-t border-line px-4 py-3 text-base text-ink">{children}</div>
-    </details>
   );
 }
 
