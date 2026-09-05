@@ -51,54 +51,209 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch] ?? ch);
 }
 
-function buildRows(lead: Lead, meta: LeadMeta): Array<[string, string]> {
+/**
+ * The lead, shaped for reading rather than for storage.
+ *
+ * The owner opens this on a phone, usually while working. What he needs, in
+ * this order: who it is, a number he can tap, what they want, and what they
+ * wrote. Everything else is bookkeeping and belongs at the bottom in small
+ * type — it was previously interleaved with the important fields at the same
+ * visual weight, so a raw ISO timestamp sat directly under the customer's name.
+ */
+export interface LeadView {
+  name: string;
+  phoneE164: string;
+  /** National form, e.g. "068 968 633". Null for a non-Moldovan number. */
+  phoneNational: string | null;
+  service: string;
+  preference: string;
+  email: string | null;
+  locality: string | null;
+  message: string | null;
+  /** Bookkeeping, rendered as one muted block. */
+  reference: string;
+  source: string;
+  page: string;
+  receivedAt: string;
+  consentVersion: string;
+}
+
+/**
+ * Human time, in the timezone the owner actually lives in.
+ *
+ * The consent timestamp is stored and transmitted as UTC ISO — that is the
+ * correct thing to RECORD, because it is unambiguous and it is the only proof
+ * consent was given. It is the wrong thing to SHOW: "2026-09-05T22:19:22.712Z"
+ * told him a lead arrived at 22:19 when his clock said 01:19.
+ */
+function formatReceived(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  try {
+    return new Intl.DateTimeFormat("ro-MD", {
+      timeZone: "Europe/Chisinau",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  } catch {
+    // A runtime without full ICU would throw rather than lose the lead.
+    return iso;
+  }
+}
+
+/** Exported for tests: pure, and the only way to check the mail without sending it. */
+export function toView(lead: Lead, meta: LeadMeta): LeadView {
   // lead.phone is already E.164 — the schema transforms it, so no user-typed
-  // string reaches this row.
-  // Both formats: the owner searches his mailbox for whatever the caller reads
-  // out, which is the national form, not E.164.
-  const national = lead.phone.startsWith("+373")
+  // string reaches here. The national form is shown as well because that is
+  // what a caller reads out, and what the owner searches his mailbox for.
+  const phoneNational = lead.phone.startsWith("+373")
     ? `0${lead.phone.slice(4)}`.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3")
     : null;
 
-  const rows: Array<[string, string]> = [
-    ["Nume", lead.name],
-    ["Telefon", national ? `${lead.phone}  (${national})` : lead.phone],
-    ["Preferă contact prin", contactPreferenceLabels[lead.contactPreference]],
-    ["Serviciu", leadServiceLabels[lead.service] ?? lead.service],
+  return {
+    name: lead.name,
+    phoneE164: lead.phone,
+    phoneNational,
+    service: leadServiceLabels[lead.service] ?? lead.service,
+    preference: contactPreferenceLabels[lead.contactPreference],
+    email: lead.email ?? null,
+    locality: lead.locality ?? null,
+    message: lead.message ?? null,
+    reference: meta.reference,
+    source: LEAD_SOURCE_LABELS[meta.source],
+    page: `${meta.locale} · ${meta.sourcePath}`,
+    receivedAt: formatReceived(meta.consentAtIso),
+    consentVersion: meta.consentVersion,
+  };
+}
+
+/**
+ * Plain-text alternative.
+ *
+ * Not a fallback nobody reads: it is what a phone notification previews, what a
+ * screen reader gets in some clients, and what raises the spam score when it is
+ * missing. It mirrors the HTML ordering so the two never tell different stories.
+ */
+export function renderText(v: LeadView): string {
+  const out = [
+    "CERERE NOUĂ DE PE SITE",
+    v.receivedAt,
+    "",
+    `${v.name}`,
+    `Telefon: ${v.phoneNational ? `${v.phoneNational}  (${v.phoneE164})` : v.phoneE164}`,
+    `Preferă: ${v.preference}`,
+    "",
+    `Serviciu: ${v.service}`,
   ];
-  if (lead.email) rows.push(["E-mail", lead.email]);
-  if (lead.locality) rows.push(["Localitate", lead.locality]);
-  if (lead.message) rows.push(["Detalii", lead.message]);
-  rows.push(["Sursă", LEAD_SOURCE_LABELS[meta.source]]);
-  rows.push(["Referință", meta.reference]);
-  rows.push(["Pagina", `${meta.locale} · ${meta.sourcePath}`]);
-  rows.push(["Acord primit", `${meta.consentAtIso} (versiunea ${meta.consentVersion})`]);
-  return rows;
+  if (v.locality) out.push(`Localitate: ${v.locality}`);
+  if (v.email) out.push(`E-mail: ${v.email}  (poți răspunde direct la acest mesaj)`);
+  if (v.message) out.push("", "Ce a scris:", v.message);
+  out.push(
+    "",
+    "—",
+    `Referință: ${v.reference} · Pagina: ${v.page} · Sursă: ${v.source}`,
+    `Acord pentru prelucrarea datelor primit la ${v.receivedAt} (versiunea ${v.consentVersion}).`,
+  );
+  return out.join("\n");
 }
 
-function renderText(rows: Array<[string, string]>): string {
-  return rows.map(([k, v]) => `${k}: ${v}`).join("\n");
-}
+/* ------------------------------------------------------------------ HTML */
 
-function renderHtml(rows: Array<[string, string]>): string {
-  const cells = rows
-    .map(
-      ([k, v]) =>
-        `<tr>` +
-        `<td style="padding:6px 14px 6px 0;color:#6b6257;font:600 12px/1.5 system-ui,sans-serif;text-transform:uppercase;letter-spacing:.08em;vertical-align:top;white-space:nowrap">${escapeHtml(k)}</td>` +
-        `<td style="padding:6px 0;color:#1c1a17;font:400 15px/1.6 system-ui,sans-serif;white-space:pre-wrap">${escapeHtml(v)}</td>` +
-        `</tr>`,
-    )
-    .join("");
+/**
+ * Deliberately old-fashioned HTML: nested tables, inline styles, no flexbox,
+ * no <style> block, no web fonts, no images. Not nostalgia — Outlook renders
+ * with Word's engine and silently drops most of the modern alternatives, and a
+ * lead e-mail that renders as a stack of unstyled text is worse than a plain
+ * one. Every cell carries its own background and colour so a client that
+ * force-inverts for dark mode cannot leave dark text on a dark ground.
+ */
+const INK = "#1c1a17";
+const MUTED = "#6b6257";
+const LINE = "#e4ded4";
+const CANVAS = "#f6f3ee";
+const BRONZE = "#8a6a43";
 
+const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+function label(text: string): string {
   return (
-    `<div style="background:#f6f3ee;padding:28px">` +
-    `<div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4ded4;padding:26px">` +
-    `<p style="margin:0 0 18px;color:#8a6a43;font:600 12px/1.5 system-ui,sans-serif;text-transform:uppercase;letter-spacing:.14em">Cerere nouă de pe site</p>` +
-    `<table style="border-collapse:collapse;width:100%">${cells}</table>` +
-    `</div></div>`
+    `<div style="margin:0 0 4px;color:${MUTED};font:600 11px/1.4 ${FONT};` +
+    `text-transform:uppercase;letter-spacing:.1em">${escapeHtml(text)}</div>`
   );
 }
+
+export function renderHtml(v: LeadView): string {
+  const detail = (name: string, value: string) =>
+    `<tr><td style="padding:0 0 14px">${label(name)}` +
+    `<div style="color:${INK};font:400 16px/1.5 ${FONT}">${escapeHtml(value)}</div></td></tr>`;
+
+  const rows: string[] = [detail("Serviciu", v.service)];
+  if (v.locality) rows.push(detail("Localitate", v.locality));
+  rows.push(detail("Preferă contact prin", v.preference));
+
+  // The customer's own words, set apart. It is the only free text in the mail
+  // and the thing that decides whether the job is worth a call back.
+  const message = v.message
+    ? `<tr><td style="padding:4px 0 18px">${label("Ce a scris")}` +
+      `<div style="border-left:3px solid ${BRONZE};background:${CANVAS};padding:12px 14px;` +
+      `color:${INK};font:400 16px/1.6 ${FONT};white-space:pre-wrap">${escapeHtml(v.message)}</div></td></tr>`
+    : "";
+
+  // mailto plus a plain statement that Reply works. Reply-To is set to this
+  // address, so the fastest path is the one he already knows.
+  const email = v.email
+    ? `<tr><td style="padding:0 0 14px">${label("E-mail")}` +
+      `<div style="font:400 16px/1.5 ${FONT}"><a href="mailto:${escapeHtml(v.email)}" ` +
+      `style="color:${BRONZE};text-decoration:underline">${escapeHtml(v.email)}</a></div>` +
+      `<div style="margin-top:4px;color:${MUTED};font:400 13px/1.5 ${FONT}">` +
+      `Poți apăsa direct <strong>Reply</strong> — răspunsul ajunge la client.</div></td></tr>`
+    : "";
+
+  const phoneShown = v.phoneNational ?? v.phoneE164;
+
+  return (
+    `<div style="margin:0;padding:24px 12px;background:${CANVAS};font-family:${FONT}">` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" ` +
+    `style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse">` +
+    `<tr><td style="background:#ffffff;border:1px solid ${LINE};padding:26px 24px">` +
+    // --- header -------------------------------------------------------
+    `<div style="color:${BRONZE};font:600 11px/1.4 ${FONT};text-transform:uppercase;letter-spacing:.14em">` +
+    `Cerere nouă de pe site</div>` +
+    `<div style="margin-top:4px;color:${MUTED};font:400 13px/1.5 ${FONT}">${escapeHtml(v.receivedAt)}</div>` +
+    // --- who ----------------------------------------------------------
+    `<div style="margin:18px 0 2px;color:${INK};font:700 26px/1.25 ${FONT}">${escapeHtml(v.name)}</div>` +
+    // --- the call button, the single most important element ------------
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:14px 0 22px">` +
+    `<tr><td style="background:${BRONZE};border-radius:4px">` +
+    `<a href="tel:${escapeHtml(v.phoneE164)}" ` +
+    `style="display:block;padding:14px 22px;color:#ffffff;font:700 19px/1.2 ${FONT};text-decoration:none">` +
+    `&#9742;&nbsp;&nbsp;${escapeHtml(phoneShown)}</a></td></tr></table>` +
+    (v.phoneNational
+      ? `<div style="margin:-14px 0 20px;color:${MUTED};font:400 13px/1.5 ${FONT}">` +
+        `Format internațional: ${escapeHtml(v.phoneE164)}</div>`
+      : "") +
+    // --- what they want ------------------------------------------------
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;` +
+    `border-top:1px solid ${LINE};padding-top:18px">` +
+    `<tr><td style="height:18px"></td></tr>` +
+    rows.join("") +
+    message +
+    email +
+    `</table>` +
+    // --- bookkeeping ---------------------------------------------------
+    `<div style="margin-top:6px;padding-top:14px;border-top:1px solid ${LINE};` +
+    `color:${MUTED};font:400 12px/1.7 ${FONT}">` +
+    `Referință <strong style="color:${INK}">${escapeHtml(v.reference)}</strong> · ` +
+    `Pagina ${escapeHtml(v.page)} · Sursă ${escapeHtml(v.source)}<br>` +
+    `Acord pentru prelucrarea datelor primit la ${escapeHtml(v.receivedAt)} ` +
+    `(versiunea ${escapeHtml(v.consentVersion)}).</div>` +
+    `</td></tr></table></div>`
+  );
+}
+
 
 const SEND_TIMEOUT_MS = 8000;
 
@@ -136,9 +291,19 @@ export async function deliverLead(lead: Lead, meta: LeadMeta): Promise<DeliveryO
     return "not_configured";
   }
 
-  const rows = buildRows(lead, meta);
+  const view = toView(lead, meta);
+
+  /**
+   * Name and NUMBER in the subject, in that order.
+   *
+   * The owner reads this first as a phone notification, on a lock screen, often
+   * with dirty hands. Putting the number there means he can decide whether to
+   * call back without unlocking anything, and it makes the mailbox searchable by
+   * the number a caller reads out. The service comes last because it is the part
+   * that survives truncation least usefully.
+   */
   const subject = singleLine(
-    `Cerere nouă · ${leadServiceLabels[lead.service] ?? lead.service} · ${lead.name}`,
+    `Cerere nouă · ${view.name} · ${view.phoneNational ?? view.phoneE164} · ${view.service}`,
   ).slice(0, 160);
 
   try {
@@ -177,8 +342,8 @@ export async function deliverLead(lead: Lead, meta: LeadMeta): Promise<DeliveryO
          */
         ...(lead.email ? { replyTo: lead.email } : {}),
         subject,
-        text: renderText(rows),
-        html: renderHtml(rows),
+        text: renderText(view),
+        html: renderHtml(view),
         // Still no cc or bcc: nothing about a lead should reach a third party.
       }),
       SEND_TIMEOUT_MS,
