@@ -80,6 +80,53 @@ ever move the nameservers away, that changes — and so does everything below.
 
 ---
 
+## Making contact@semidom.md actually receive
+
+The owner already has a cPanel mail server. Probed 2026-09-06:
+
+```console
+$ nc 195.178.106.105 587
+220-host8.tophost.md ESMTP Exim 4.99.5
+
+$ nslookup host8.tophost.md      -> 195.178.106.105
+$ nslookup -type=MX semidom.md ns4.tophost.md   -> semidom.md
+$ nslookup -type=TXT semidom.md ns4.tophost.md  -> v=spf1 +a +mx +ip4:195.178.106.105 ~all
+```
+
+So no third-party mailbox is needed. But **do not copy TopHost's MX value.**
+
+### The trap in TopHost's own zone
+
+TopHost points `MX semidom.md -> semidom.md` — the apex pointing at itself. That
+works in THEIR zone, where the apex A record is the cPanel server. In OUR zone
+the apex A record is **Vercel's web servers**, which speak HTTP and not SMTP.
+Copy that MX across and every message to the domain is delivered to a web server
+that will not accept it.
+
+The MX target must therefore be a name that resolves to the mail server, and it
+must be an A record — an MX may never point at a CNAME.
+
+### The records, in Vercel DNS
+
+| Type | Name | Priority | Value |
+| --- | --- | --- | --- |
+| A | `mail` | — | `195.178.106.105` |
+| MX | `@` | 10 | `mail.semidom.md` |
+| A | `webmail` | — | `195.178.106.105` |
+| TXT | `@` | — | `v=spf1 +mx include:amazonses.com ~all` |
+
+`+mx` authorises whatever the MX points at — the cPanel server — without pinning
+a second copy of the IP, and `include:amazonses.com` covers Resend if a message
+is ever sent with an apex return-path. Four DNS lookups, well inside the limit
+of ten.
+
+Then create the mailbox itself in cPanel → Email Accounts → `contact@semidom.md`.
+Webmail at `https://webmail.semidom.md`, IMAP/SMTP host `mail.semidom.md`.
+
+The `mail` A record pins an IP we do not control. If TopHost migrates the account
+to another host, this record has to move with it — the symptom is mail that
+stops arriving with no error anywhere on our side.
+
 ## Mail: sending and receiving are two different problems
 
 **This is the distinction that costs people a week.** Measured in the live zone
