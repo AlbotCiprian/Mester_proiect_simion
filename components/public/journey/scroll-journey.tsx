@@ -2,13 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { baie } from "@/lib/journey";
+import { getBaieChapter } from "@/lib/journey";
+import { defaultLocale } from "@/lib/i18n";
 import { track } from "@/lib/analytics";
 import { detectCapability, journeyMode, resolveJourneyMode } from "@/lib/capability";
 
 type Mode = "idle" | "scrub" | "loop";
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/**
+ * Module scope, deliberately.
+ *
+ * The enhancer reads only MEDIA capability and the chapter id, neither of
+ * which varies by language, so the default locale is correct here. Computing
+ * it inside the component would hand every effect a new object on each render
+ * and reintroduce the exhaustive-deps warnings this replaced.
+ */
+const baie = getBaieChapter(defaultLocale);
 
 export default function ScrollJourney() {
   const [mode, setMode] = useState<Mode>("idle");

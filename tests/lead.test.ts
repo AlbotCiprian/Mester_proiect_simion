@@ -4,7 +4,7 @@ import {
   contactPreferences,
   fieldErrorsFrom,
   leadSchema,
-  leadServiceLabels,
+  getLeadServiceLabels,
   leadServiceSlugs,
   normalizePhone,
 } from "@/lib/lead";
@@ -67,7 +67,7 @@ describe("leadSchema", () => {
   it("rejects a missing consent", () => {
     const parsed = leadSchema.safeParse({ ...validLead, consent: false });
     assert.equal(parsed.success, false);
-    assert.match(fieldErrorsFrom(parsed.error!).consent ?? "", /acordul/i);
+    assert.match(fieldErrorsFrom(parsed.error!, "ro").consent ?? "", /acordul/i);
   });
 
   it("rejects a name made only of invisible characters", () => {
@@ -84,7 +84,7 @@ describe("leadSchema", () => {
   it("requires an e-mail when e-mail is the chosen contact method", () => {
     const parsed = leadSchema.safeParse({ ...validLead, contactPreference: "email" });
     assert.equal(parsed.success, false);
-    assert.match(fieldErrorsFrom(parsed.error!).email ?? "", /e-mail/i);
+    assert.match(fieldErrorsFrom(parsed.error!, "ro").email ?? "", /e-mail/i);
   });
 
   it("accepts an empty optional e-mail", () => {
@@ -112,12 +112,12 @@ describe("fieldErrorsFrom", () => {
   it("never returns an empty map for a failed parse", () => {
     const parsed = leadSchema.safeParse({});
     assert.equal(parsed.success, false);
-    assert.ok(Object.keys(fieldErrorsFrom(parsed.error!)).length > 0);
+    assert.ok(Object.keys(fieldErrorsFrom(parsed.error!, "ro")).length > 0);
   });
 
   it("keeps the first message per field", () => {
     const parsed = leadSchema.safeParse({ ...validLead, name: "" });
-    const errors = fieldErrorsFrom(parsed.error!);
+    const errors = fieldErrorsFrom(parsed.error!, "ro");
     assert.equal(typeof errors.name, "string");
   });
 });
@@ -133,7 +133,7 @@ describe("service catalogue", () => {
 
   it("has a label for every slug", () => {
     for (const slug of leadServiceSlugs) {
-      assert.equal(typeof leadServiceLabels[slug], "string");
+      assert.equal(typeof getLeadServiceLabels("ro")[slug], "string");
     }
   });
 });

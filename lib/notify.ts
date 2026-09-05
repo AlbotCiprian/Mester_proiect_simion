@@ -2,7 +2,8 @@ import "server-only";
 
 import { Resend } from "resend";
 import { env, leadDeliveryConfigured, misplacedResendKeyVars, missingDeliveryVars } from "@/lib/env";
-import { contactPreferenceLabels, leadServiceLabels, type Lead } from "@/lib/lead";
+import { getContactPreferenceLabels, getLeadServiceLabels, type Lead } from "@/lib/lead";
+import { isLocale, defaultLocale } from "@/lib/i18n";
 import { LEAD_SOURCE_LABELS, type LeadSource } from "@/lib/lead-source";
 
 /**
@@ -109,6 +110,11 @@ export function toView(lead: Lead, meta: LeadMeta): LeadView {
   // lead.phone is already E.164 — the schema transforms it, so no user-typed
   // string reaches here. The national form is shown as well because that is
   // what a caller reads out, and what the owner searches his mailbox for.
+  // The mail is written in the language the VISITOR used, not the owner's
+  // default: he needs to see the service exactly as they picked it.
+  const locale = isLocale(meta.locale) ? meta.locale : defaultLocale;
+  const serviceLabels = getLeadServiceLabels(locale);
+
   const phoneNational = lead.phone.startsWith("+373")
     ? `0${lead.phone.slice(4)}`.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3")
     : null;
@@ -117,8 +123,8 @@ export function toView(lead: Lead, meta: LeadMeta): LeadView {
     name: lead.name,
     phoneE164: lead.phone,
     phoneNational,
-    service: leadServiceLabels[lead.service] ?? lead.service,
-    preference: contactPreferenceLabels[lead.contactPreference],
+    service: serviceLabels[lead.service] ?? lead.service,
+    preference: getContactPreferenceLabels(locale)[lead.contactPreference],
     email: lead.email ?? null,
     locality: lead.locality ?? null,
     message: lead.message ?? null,

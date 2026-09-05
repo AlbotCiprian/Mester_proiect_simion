@@ -23,8 +23,8 @@ export interface HeroPoster {
 export interface HeroMediaConfig {
   desktopPoster: HeroPoster;
   mobilePoster: HeroPoster;
-  /** Describes the frame. The hero image is content, not decoration. */
-  posterAlt: string;
+  /** Describes the frame, per locale. The hero image is content, not decoration. */
+  posterAlt: Record<Locale, string>;
   video: HeroVideoConfig | null;
   rightsStatus: RightsStatus;
   publicationAllowed: boolean;
@@ -72,11 +72,11 @@ export function canPublish(m: HeroMediaConfig): boolean {
   return m.publicationAllowed === true && m.rightsStatus !== "MOODBOARD_ONLY";
 }
 
-export function toPublicDTO(m: HeroMediaConfig): HeroMediaDTO {
+export function toPublicDTO(m: HeroMediaConfig, locale: Locale): HeroMediaDTO {
   return {
     desktopPoster: m.desktopPoster,
     mobilePoster: m.mobilePoster,
-    posterAlt: m.posterAlt,
+    posterAlt: m.posterAlt[locale],
     desktopObjectPosition: m.desktopObjectPosition ?? "50% 50%",
     mobileObjectPosition: m.mobileObjectPosition ?? "50% 50%",
     video: m.video ? { desktopMp4: m.video.desktopMp4, mobileMp4: m.video.mobileMp4 } : null,
@@ -103,8 +103,16 @@ export const heroMedia: HeroMediaConfig = {
     avif: "/media/hero/hero-cada-placata-mobile.avif",
     webp: "/media/hero/hero-cada-placata-mobile.webp",
   },
-  posterAlt:
-    "Cadă zidită și placată integral cu plăci aspect marmură, cu muchii tăiate la 45° și tipar continuu pe perete.",
+  /**
+   * Per locale. The hero image is CONTENT, not decoration, so its alt text is
+   * read aloud and indexed — a Russian page describing its own main photograph
+   * in Romanian is both an accessibility failure and a wasted image-search
+   * signal. Total over Locale for the same reason heroCopy is.
+   */
+  posterAlt: {
+    ro: "Cadă zidită și placată integral cu plăci aspect marmură, cu muchii tăiate la 45° și tipar continuu pe perete.",
+    ru: "Ванна в коробе, полностью облицованная плиткой под мрамор, с запилом углов под 45° и непрерывным рисунком по стене.",
+  },
   video: null,
   rightsStatus: "OWNED",
   publicationAllowed: true,
@@ -115,8 +123,14 @@ export const heroMedia: HeroMediaConfig = {
 // CTAs use existing in-page anchors (dedicated routes + service preselect are P1).
 export const heroCta = { primary: "#contact", secondary: "#proiecte" } as const;
 
-// RO only in P0. RU stays CONFIRM_OWNER until publishedLocales includes "ru".
-export const heroCopy: Partial<Record<Locale, HeroCopy>> = {
+/**
+ * NOT Partial. It used to be, with a `?? heroCopy.ro` fallback in the component,
+ * and that combination did exactly what ADR-011 forbids: /ru rendered the whole
+ * page in Russian and then the H1 — the single most important line on the site —
+ * in Romanian. No type error, no warning, and invisible unless someone reads the
+ * Russian page. A total Record makes a missing language a compile error.
+ */
+export const heroCopy: Record<Locale, HeroCopy> = {
   ro: {
     eyebrow: "Finisaje premium pentru spații care rămân",
     title: "Montaj gresie și faianță în Chișinău, executat cu precizie",
@@ -127,5 +141,18 @@ export const heroCopy: Partial<Record<Locale, HeroCopy>> = {
     pause: "Oprește video",
     play: "Pornește video",
     scrollHint: "Descoperă serviciile",
+  },
+  ru: {
+    eyebrow: "Премиальная отделка для помещений, которые остаются",
+    // Carries the service AND the city, like the Romanian: it is the line that
+    // has to work as a search result and as a first impression at the same time.
+    title: "Укладка плитки в Кишинёве, выполненная точно",
+    description:
+      "Преображаем ванные и целые интерьеры: правильная подготовка основания, выверенное выравнивание и чистая отделка — под каждый объект.",
+    primaryCta: "Получить оценку",
+    secondaryCta: "Смотреть работы",
+    pause: "Остановить видео",
+    play: "Запустить видео",
+    scrollHint: "Смотреть услуги",
   },
 };

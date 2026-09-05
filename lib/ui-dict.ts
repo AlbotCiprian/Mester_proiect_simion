@@ -140,6 +140,82 @@ export interface UiDict {
     groups: { bathroom: string; tiling: string; exterior: string; before: string };
     groupNotes: { bathroom: string; tiling: string; exterior: string; before: string };
   };
+  form: {
+    /** Outcome states. */
+    successTitle: string;
+    successBody: string;
+    successBodyTail: string;
+    reference: string;
+    undeliveredTitle: string;
+    undeliveredBody: string;
+    undeliveredTail: string;
+    rateLimitedTitle: string;
+    rateLimitedBody: string;
+    invalidBanner: string;
+    /** Fields. */
+    nameLabel: string;
+    namePlaceholder: string;
+    phoneLabel: string;
+    phonePlaceholder: string;
+    phoneHint: string;
+    serviceLabel: string;
+    preferenceLabel: string;
+    localityLabel: string;
+    localityPlaceholder: string;
+    emailLabel: string;
+    emailPlaceholder: string;
+    messageLabel: string;
+    messagePlaceholder: string;
+    /** Consent, split so the privacy link sits inside the sentence. */
+    consentPrefix: string;
+    consentLink: string;
+    consentSuffix: string;
+    /** Actions. */
+    submit: string;
+    submitting: string;
+    footnote: string;
+    requiredMark: string;
+  };
+  journey: {
+    priceKicker: string;
+    priceOnRequest: string;
+    includes: string;
+    finalNote: string;
+  };
+  privacy: {
+    metaTitle: string;
+    metaDescription: string;
+    kicker: string;
+    title: string;
+    lead: string;
+    version: (v: string) => string;
+    controllerTitle: string;
+    controllerBody: (entity: string, form: string, brand: string) => string;
+    contactBody: string;
+    contactOr: string;
+    collectTitle: string;
+    collectLead: string;
+    collectItems: string[];
+    collectNote: string;
+    whyTitle: string;
+    whyBody: string;
+    whyNoMarketing: string;
+    sharedTitle: string;
+    sharedLead: string;
+    sharedItems: string[];
+    sharedNote: string;
+    cookiesTitle: string;
+    cookiesBody: string;
+    cookiesFuture: string;
+    retentionTitle: string;
+    retentionBody: string;
+    rightsTitle: string;
+    rightsBody: string;
+    rightsAuthority: string;
+    backToForm: string;
+    bandTitle: string;
+    bandBody: string;
+  };
   notFound: {
     kicker: string;
     title: string;
@@ -300,6 +376,104 @@ const ro: UiDict = {
       before: "Ce trebuie să știi ca să compari corect două oferte, inclusiv pe a noastră.",
     },
   },
+  form: {
+    successTitle: "Cererea a plecat spre noi.",
+    successBody: "Revenim cu un răspuns la numărul lăsat. Dacă vrei mai repede, sună direct la",
+    successBodyTail: ".",
+    reference: "Referință",
+    undeliveredTitle: "Nu am putut trimite cererea.",
+    undeliveredBody:
+      "A fost o problemă tehnică la trimitere, iar cererea ta nu a ajuns la noi. Te rugăm sună la",
+    undeliveredTail: "— răspundem direct.",
+    rateLimitedTitle: "Prea multe trimiteri într-un timp scurt",
+    rateLimitedBody:
+      "Formularul limitează numărul de trimiteri, așa că ultima nu a fost procesată. Mai încearcă peste câteva minute sau sună direct la",
+    invalidBanner: "Mai sunt câteva câmpuri de corectat mai jos.",
+    nameLabel: "Nume",
+    namePlaceholder: "Ion Popescu",
+    phoneLabel: "Telefon",
+    phonePlaceholder: "069 123 456",
+    phoneHint: "Îl folosim doar ca să revenim cu un răspuns.",
+    serviceLabel: "Ce ai de făcut",
+    preferenceLabel: "Cum preferi să te contactăm",
+    localityLabel: "Localitate",
+    localityPlaceholder: "Chișinău, sect. Botanica",
+    emailLabel: "E-mail",
+    emailPlaceholder: "opțional",
+    messageLabel: "Detalii",
+    messagePlaceholder: "Suprafața aproximativă, starea încăperii, termenul dorit…",
+    consentPrefix: "Am citit",
+    consentLink: "politica de confidențialitate",
+    consentSuffix:
+      "și sunt de acord să fiu contactat în legătură cu această cerere. Datele nu sunt folosite în alt scop și nu sunt transmise mai departe.",
+    submit: "Trimite cererea",
+    submitting: "Se trimite…",
+    footnote: "Preferi să vorbești direct? Sună la",
+    requiredMark: "obligatoriu",
+  },
+  journey: {
+    priceKicker: "Preț orientativ",
+    priceOnRequest: "La cerere",
+    includes: "Include",
+    finalNote: "Evaluarea finală depinde de suprafață și condiții.",
+  },
+  privacy: {
+    metaTitle: "Politica de confidențialitate",
+    metaDescription:
+      "Ce date colectăm prin formularul de contact, în ce scop, cine le procesează, ce cookie-uri folosim și cât timp le păstrăm.",
+    kicker: "Date personale",
+    title: "Politica de confidențialitate",
+    lead: "Această pagină explică ce date primim prin formularul de pe site, de ce le folosim, cine le mai vede, ce cookie-uri folosim și cât timp le păstrăm.",
+    version: (v) => `Versiunea ${v}.`,
+    controllerTitle: "Cine prelucrează datele",
+    controllerBody: (entity, form, brand) =>
+      `Operatorul datelor este ${entity} (${form}), care activează sub denumirea comercială ${brand}, în Republica Moldova.`,
+    contactBody: "Ne poți contacta la",
+    contactOr: "sau la",
+    collectTitle: "Ce date colectăm",
+    collectLead: "Doar ce completezi tu în formular:",
+    collectItems: [
+      "numele tău",
+      "numărul de telefon",
+      "adresa de e-mail, dacă o completezi (este opțională)",
+      "localitatea, dacă o completezi",
+      "serviciul pe care îl cauți și metoda de contact preferată",
+      "detaliile pe care le scrii despre lucrare",
+    ],
+    collectNote:
+      "Nu îți cerem adresa exactă, buletinul sau date de plată. Serverul care găzduiește site-ul înregistrează, ca orice server web, adresa IP a cererii; noi o folosim doar ca să limităm trimiterile automate, într-o formă criptată ireversibil, și nu o stocăm alături de datele tale.",
+    whyTitle: "De ce le folosim",
+    whyBody:
+      "Ca să răspundem la cererea ta: să te sunăm, să clarificăm lucrarea și să îți dăm un interval de preț. Temeiul este consimțământul tău, exprimat prin bifa din formular, împreună cu pregătirea unui eventual contract, la cererea ta. Îți poți retrage consimțământul oricând, sunându-ne sau scriindu-ne.",
+    whyNoMarketing:
+      "Nu trimitem newslettere, nu facem marketing, nu profilăm și nu vindem datele nimănui.",
+    sharedTitle: "Cine le mai vede",
+    sharedLead:
+      "Cererea îți ajunge la noi pe e-mail. Pentru asta folosim doi furnizori, care procesează datele strict în numele nostru:",
+    sharedItems: [
+      "Resend — serviciul care livrează e-mailul cu cererea ta. Serverele sale sunt în afara Republicii Moldova, în Statele Unite.",
+      "Vercel — găzduirea site-ului, care păstrează pe termen scurt jurnale tehnice ale cererilor (inclusiv adresa IP).",
+    ],
+    sharedNote:
+      "În rest, datele nu ajung la nimeni altcineva. Nu le transmitem altor meșteri, furnizori de materiale sau agenții de publicitate.",
+    cookiesTitle: "Cookie-uri și tehnologii similare",
+    cookiesBody:
+      "Site-ul nu folosește cookie-uri. Nu avem cookie-uri de urmărire, de publicitate sau de analiză, nu folosim pixeli de remarketing și nu încărcăm scripturi din alte domenii. De aceea nu vezi nicio fereastră de consimțământ pentru cookie-uri: nu am avea pentru ce să ți-o cerem.",
+    cookiesFuture:
+      "Formularul folosește doar memoria paginii pe durata completării, care dispare când închizi fila. Dacă vom adăuga vreodată statistici de trafic, îți vom cere întâi acordul printr-un banner și vom actualiza această pagină înainte de a porni ceva.",
+    retentionTitle: "Cât timp le păstrăm",
+    retentionBody:
+      "Păstrăm cererea cât timp discutăm despre lucrare și, dacă lucrarea se face, pe durata garanției. Dacă nu ajungem la o colaborare, ștergem mesajul din cutia poștală în cel mult 12 luni.",
+    rightsTitle: "Drepturile tale",
+    rightsBody:
+      "Poți cere oricând să afli ce date avem despre tine, să le corectăm sau să le ștergem, să îți retragi consimțământul și să te opui folosirii lor. Ne suni la",
+    rightsAuthority:
+      "Dacă nu ești mulțumit de răspuns, te poți adresa Centrului Național pentru Protecția Datelor cu Caracter Personal al Republicii Moldova.",
+    backToForm: "Înapoi la formularul de contact",
+    bandTitle: "Ai o întrebare despre datele tale?",
+    bandBody:
+      "Sună-ne și rezolvăm. Pentru o cerere de lucrare, formularul complet este pe pagina principală.",
+  },
   notFound: {
     kicker: "Eroare 404",
     title: "Pagina asta nu există",
@@ -459,6 +633,105 @@ const ru: UiDict = {
         "Поверхности под морозом, где система монтажа важнее самой плитки.",
       before: "Что нужно знать, чтобы корректно сравнить две сметы, включая нашу.",
     },
+  },
+  form: {
+    successTitle: "Заявка ушла к нам.",
+    successBody:
+      "Перезвоним на указанный номер. Если нужно быстрее — звоните напрямую:",
+    successBodyTail: ".",
+    reference: "Номер обращения",
+    undeliveredTitle: "Не удалось отправить заявку.",
+    undeliveredBody:
+      "Произошла техническая ошибка при отправке, и ваша заявка до нас не дошла. Пожалуйста, позвоните:",
+    undeliveredTail: "— ответим сразу.",
+    rateLimitedTitle: "Слишком много отправок за короткое время",
+    rateLimitedBody:
+      "Форма ограничивает число отправок, поэтому последняя не была обработана. Попробуйте через несколько минут или позвоните напрямую:",
+    invalidBanner: "Ниже осталось несколько полей, которые нужно поправить.",
+    nameLabel: "Имя",
+    namePlaceholder: "Иван Попеску",
+    phoneLabel: "Телефон",
+    phonePlaceholder: "069 123 456",
+    phoneHint: "Нужен только для того, чтобы перезвонить с ответом.",
+    serviceLabel: "Что нужно сделать",
+    preferenceLabel: "Как удобнее связаться",
+    localityLabel: "Населённый пункт",
+    localityPlaceholder: "Кишинёв, сектор Ботаника",
+    emailLabel: "E-mail",
+    emailPlaceholder: "необязательно",
+    messageLabel: "Подробности",
+    messagePlaceholder: "Примерная площадь, состояние помещения, желаемые сроки…",
+    consentPrefix: "Я прочитал(а)",
+    consentLink: "политику конфиденциальности",
+    consentSuffix:
+      "и согласен(на) на то, чтобы со мной связались по этой заявке. Данные не используются для других целей и не передаются третьим лицам.",
+    submit: "Отправить заявку",
+    submitting: "Отправляем…",
+    footnote: "Удобнее поговорить сразу? Звоните:",
+    requiredMark: "обязательно",
+  },
+  journey: {
+    priceKicker: "Ориентировочная цена",
+    priceOnRequest: "По запросу",
+    includes: "Входит",
+    finalNote: "Окончательная оценка зависит от площади и условий.",
+  },
+  privacy: {
+    metaTitle: "Политика конфиденциальности",
+    metaDescription:
+      "Какие данные мы получаем через форму на сайте, зачем, кто их обрабатывает, какие используются cookie и сколько мы их храним.",
+    kicker: "Персональные данные",
+    title: "Политика конфиденциальности",
+    lead: "На этой странице объясняется, какие данные мы получаем через форму на сайте, зачем они нужны, кто ещё их видит, какие cookie мы используем и сколько времени их храним.",
+    version: (v) => `Версия ${v}.`,
+    controllerTitle: "Кто обрабатывает данные",
+    controllerBody: (entity, form, brand) =>
+      `Оператор данных — ${entity} (${form}), работающий под коммерческим названием ${brand}, в Республике Молдова.`,
+    contactBody: "Связаться с нами можно по телефону",
+    contactOr: "или по адресу",
+    collectTitle: "Какие данные мы собираем",
+    collectLead: "Только то, что вы сами заполняете в форме:",
+    collectItems: [
+      "ваше имя",
+      "номер телефона",
+      "адрес e-mail, если вы его укажете (поле необязательное)",
+      "населённый пункт, если вы его укажете",
+      "услугу, которая вас интересует, и предпочтительный способ связи",
+      "подробности о работе, которые вы напишете",
+    ],
+    collectNote:
+      "Мы не запрашиваем точный адрес, паспортные или платёжные данные. Сервер, на котором работает сайт, как и любой веб-сервер, фиксирует IP-адрес запроса; мы используем его только для ограничения автоматических отправок, в необратимо зашифрованном виде, и не храним рядом с вашими данными.",
+    whyTitle: "Зачем они нужны",
+    whyBody:
+      "Чтобы ответить на вашу заявку: позвонить, уточнить объём работ и назвать диапазон стоимости. Основание — ваше согласие, выраженное галочкой в форме, вместе с подготовкой возможного договора по вашему запросу. Согласие можно отозвать в любой момент, позвонив или написав нам.",
+    whyNoMarketing:
+      "Мы не рассылаем новости, не занимаемся маркетингом, не строим профили и никому не продаём данные.",
+    sharedTitle: "Кто ещё их видит",
+    sharedLead:
+      "Заявка приходит к нам по электронной почте. Для этого мы используем двух поставщиков услуг, которые обрабатывают данные строго от нашего имени:",
+    sharedItems: [
+      "Resend — сервис, который доставляет письмо с вашей заявкой. Его серверы находятся за пределами Республики Молдова, в Соединённых Штатах.",
+      "Vercel — хостинг сайта, который недолго хранит технические журналы запросов (включая IP-адрес).",
+    ],
+    sharedNote:
+      "Больше данные не попадают ни к кому. Мы не передаём их другим мастерам, поставщикам материалов или рекламным агентствам.",
+    cookiesTitle: "Cookie и схожие технологии",
+    cookiesBody:
+      "Сайт не использует cookie. У нас нет ни отслеживающих, ни рекламных, ни аналитических cookie, мы не используем пиксели ремаркетинга и не загружаем скрипты с других доменов. Поэтому вы и не видите окна согласия на cookie: нам просто не о чем вас спрашивать.",
+    cookiesFuture:
+      "Форма использует только память страницы на время заполнения, и она исчезает, когда вы закрываете вкладку. Если мы когда-нибудь добавим статистику посещений, мы сначала спросим вашего согласия через баннер и обновим эту страницу, прежде чем что-то запускать.",
+    retentionTitle: "Сколько мы их храним",
+    retentionBody:
+      "Мы храним заявку, пока обсуждаем работу, и, если работа выполняется, в течение гарантийного срока. Если сотрудничество не состоится, мы удаляем письмо из почтового ящика не позднее чем через 12 месяцев.",
+    rightsTitle: "Ваши права",
+    rightsBody:
+      "Вы можете в любой момент узнать, какие данные о вас у нас есть, потребовать их исправления или удаления, отозвать согласие и возразить против их использования. Позвоните нам по номеру",
+    rightsAuthority:
+      "Если ответ вас не устроит, вы можете обратиться в Национальный центр по защите персональных данных Республики Молдова.",
+    backToForm: "Вернуться к форме обратной связи",
+    bandTitle: "Есть вопрос о ваших данных?",
+    bandBody:
+      "Позвоните — разберёмся. Для заявки на работу полная форма находится на главной странице.",
   },
   notFound: {
     kicker: "Ошибка 404",

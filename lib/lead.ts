@@ -6,14 +6,16 @@
 
 import { z } from "zod";
 
+import { defaultLocale, type Locale } from "@/lib/i18n";
+
 // Plain constants and result types live in lib/lead-labels.ts, which imports no
 // zod — that is what keeps zod out of the client bundle. Re-exported here so the
 // server side has one import site.
 export {
   contactPreferences,
-  contactPreferenceLabels,
+  getContactPreferenceLabels,
   leadServiceSlugs,
-  leadServiceLabels,
+  getLeadServiceLabels,
 } from "@/lib/lead-labels";
 export type {
   ContactPreference,
@@ -72,20 +74,63 @@ export function normalizePhone(raw: string): string | null {
   return null;
 }
 
-const M = {
-  required: "Acest câmp este obligatoriu.",
-  nameShort: "Scrie numele tău (minim 2 caractere).",
-  nameLong: "Numele este prea lung.",
-  phoneRequired: "Avem nevoie de un număr de telefon ca să te putem contacta.",
-  phoneInvalid: "Numărul nu pare valid. Exemplu: 069 123 456.",
-  emailInvalid: "Adresa de e-mail nu pare validă.",
-  emailLong: "Adresa de e-mail este prea lungă.",
-  serviceInvalid: "Alege un serviciu din listă.",
-  localityLong: "Localitatea este prea lungă.",
-  messageLong: "Textul este prea lung (maxim 1500 de caractere).",
-  consent: "Fără acordul tău nu putem folosi datele ca să te contactăm.",
-  emailNeeded: "Ai ales e-mailul ca metodă de contact — completează adresa.",
-} as const;
+/**
+ * Validation messages, per locale.
+ *
+ * These are produced SERVER-side by zod, so they cannot come from the client
+ * dictionary — the form posts its locale and app/actions/lead.ts builds the
+ * schema for it. Before this, a Russian visitor who mistyped a phone number got
+ * the correction in Romanian, which is worse than no message: it reads as a
+ * broken site at the exact moment they were about to convert.
+ *
+ * Every message says what to DO, not merely what is wrong. "Numărul nu pare
+ * valid" alone leaves someone guessing at the format; the example does not.
+ */
+interface Messages {
+  required: string;
+  nameShort: string;
+  nameLong: string;
+  phoneRequired: string;
+  phoneInvalid: string;
+  emailInvalid: string;
+  emailLong: string;
+  serviceInvalid: string;
+  localityLong: string;
+  messageLong: string;
+  consent: string;
+  emailNeeded: string;
+}
+
+const MESSAGES: Record<Locale, Messages> = {
+  ro: {
+    required: "Acest câmp este obligatoriu.",
+    nameShort: "Scrie numele tău (minim 2 caractere).",
+    nameLong: "Numele este prea lung.",
+    phoneRequired: "Avem nevoie de un număr de telefon ca să te putem contacta.",
+    phoneInvalid: "Numărul nu pare valid. Exemplu: 069 123 456.",
+    emailInvalid: "Adresa de e-mail nu pare validă.",
+    emailLong: "Adresa de e-mail este prea lungă.",
+    serviceInvalid: "Alege un serviciu din listă.",
+    localityLong: "Localitatea este prea lungă.",
+    messageLong: "Textul este prea lung (maxim 1500 de caractere).",
+    consent: "Fără acordul tău nu putem folosi datele ca să te contactăm.",
+    emailNeeded: "Ai ales e-mailul ca metodă de contact — completează adresa.",
+  },
+  ru: {
+    required: "Это поле обязательно.",
+    nameShort: "Напишите ваше имя (минимум 2 символа).",
+    nameLong: "Имя слишком длинное.",
+    phoneRequired: "Нам нужен номер телефона, чтобы связаться с вами.",
+    phoneInvalid: "Номер выглядит неверно. Пример: 069 123 456.",
+    emailInvalid: "Адрес e-mail выглядит неверно.",
+    emailLong: "Адрес e-mail слишком длинный.",
+    serviceInvalid: "Выберите услугу из списка.",
+    localityLong: "Название населённого пункта слишком длинное.",
+    messageLong: "Текст слишком длинный (максимум 1500 символов).",
+    consent: "Без вашего согласия мы не можем использовать данные, чтобы связаться с вами.",
+    emailNeeded: "Вы выбрали e-mail как способ связи — укажите адрес.",
+  },
+};
 
 const optionalLine = (max: number, tooLong: string) =>
   z
@@ -94,7 +139,16 @@ const optionalLine = (max: number, tooLong: string) =>
     .refine((v) => v.length <= max, tooLong)
     .optional();
 
-export const leadSchema = z
+/**
+ * The schema for one locale.
+ *
+ * Built per request rather than once at module load. zod schemas are cheap to
+ * construct and this is the only way the messages can be in the visitor's
+ * language without shipping zod to the browser.
+ */
+export function leadSchemaFor(locale: Locale) {
+  const M = MESSAGES[locale];
+  return z
   .object({
     name: z
       .string({ error: M.required })
@@ -150,11 +204,19 @@ export const leadSchema = z
     message: M.emailNeeded,
     path: ["email"],
   });
+}
+
+/**
+ * The canonical schema, used only for the TYPES. Parsing goes through
+ * leadSchemaFor(locale) so the visitor sees their own language; the shape is
+ * identical in every locale, so deriving the type from one of them is exact.
+ */
+export const leadSchema = leadSchemaFor(defaultLocale);
 
 export type LeadInput = z.input<typeof leadSchema>;
 export type Lead = z.output<typeof leadSchema>;
 
-export function fieldErrorsFrom(error: z.ZodError<unknown>): LeadFieldErrors {
+export function fieldErrorsFrom(error: z.ZodError<unknown>, locale: Locale): LeadFieldErrors {
   const out: LeadFieldErrors = {};
   for (const issue of error.issues) {
     const key = issue.path[0];
@@ -166,6 +228,6 @@ export function fieldErrorsFrom(error: z.ZodError<unknown>): LeadFieldErrors {
   }
   // A parse can only fail with at least one issue; if every issue was pathless
   // and somehow empty, still give the form something to render.
-  if (Object.keys(out).length === 0) out._form = M.required;
+  if (Object.keys(out).length === 0) out._form = MESSAGES[locale].required;
   return out;
 }

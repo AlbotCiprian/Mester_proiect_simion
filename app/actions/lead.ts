@@ -2,7 +2,7 @@
 
 import { createHmac, randomUUID } from "node:crypto";
 import { headers } from "next/headers";
-import { leadSchema, fieldErrorsFrom, type LeadResult } from "@/lib/lead";
+import { leadSchemaFor, fieldErrorsFrom, type LeadResult } from "@/lib/lead";
 import { clientIpFrom, hashIp, rateLimit } from "@/lib/rate-limit";
 import { deliverLead } from "@/lib/notify";
 import { isLocale, defaultLocale } from "@/lib/i18n";
@@ -117,13 +117,18 @@ export async function submitLead(_prev: LeadResult | null, formData: FormData): 
     return { status: "rate_limited" };
   }
 
+  // The locale the form posted. Needed BEFORE parsing now: the schema builds
+  // its messages in the visitor language, so a Russian visitor is not told in
+  // Romanian that their phone number is wrong.
+  const localeParam = typeof raw.locale === "string" && isLocale(raw.locale) ? raw.locale : defaultLocale;
+
   // 4) Checkboxes arrive as "on" / absent; zod wants a real boolean.
-  const parsed = leadSchema.safeParse({
+  const parsed = leadSchemaFor(localeParam).safeParse({
     ...raw,
     consent: raw.consent === "on" || raw.consent === "true" || raw.consent === true,
   });
   if (!parsed.success) {
-    return { status: "invalid", errors: fieldErrorsFrom(parsed.error) };
+    return { status: "invalid", errors: fieldErrorsFrom(parsed.error, localeParam) };
   }
 
   // 5) Idempotency FIRST. A repeat inside the window replays the outcome of a
@@ -149,8 +154,6 @@ export async function submitLead(_prev: LeadResult | null, formData: FormData): 
     console.warn(`[lead:${ref}] instance ceiling reached, refusing delivery`);
     return { status: "undelivered" };
   }
-
-  const localeParam = typeof raw.locale === "string" && isLocale(raw.locale) ? raw.locale : defaultLocale;
 
   const source = resolveLeadSource(
     typeof raw.utmSource === "string" ? raw.utmSource : undefined,

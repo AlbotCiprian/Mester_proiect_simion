@@ -37,7 +37,27 @@ export default async function PublicLayout({
       <div className="fixed inset-x-0 top-0 z-50">
         <SiteHeader locale={locale as Locale} />
       </div>
-      <main id="main" tabIndex={-1}>
+      {/**
+       * lang on the content wrapper, not on <html>.
+       *
+       * The <html> element lives in app/layout.tsx, which is the ROOT layout
+       * and receives no params — Next gives a nested layout no way to change
+       * an attribute on it. The supported fix is to make app/[locale]/layout.tsx
+       * the root, which means deleting app/layout.tsx, app/page.tsx and
+       * app/not-found.tsx and moving the / redirect into next.config. That is a
+       * structural change to a live, indexed site and it is not worth making at
+       * the same time as publishing a language.
+       *
+       * So: <html lang> stays "ro" and every word of content carries its real
+       * language here. This is WCAG 3.1.2 (language of parts) satisfied for the
+       * whole subtree — a screen reader pronounces the Russian pages correctly,
+       * which is the actual user-facing benefit — while 3.1.1 (language of page)
+       * stays imperfect. Google is told the language by hreflang regardless.
+       *
+       * TRACKED, not forgotten: fix it in its own change, with its own build
+       * verification, once the launch has settled.
+       */}
+      <main id="main" tabIndex={-1} lang={locale}>
         {children}
       </main>
       <SiteFooter locale={locale as Locale} />

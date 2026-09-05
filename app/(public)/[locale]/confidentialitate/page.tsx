@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { isLocale, publishedLocales } from "@/lib/i18n";
-import { canonicalFor, robotsMeta } from "@/lib/seo";
+import { isLocale, publishedLocales, type Locale } from "@/lib/i18n";
+import { canonicalFor, languageAlternates, robotsMeta } from "@/lib/seo";
 import { phone, site } from "@/lib/content";
+import { ui } from "@/lib/ui-dict";
 import { Container, Kicker } from "@/components/public/ui";
 import { ContactBand } from "@/components/public/cta";
 
@@ -21,15 +22,23 @@ import { ContactBand } from "@/components/public/cta";
  * identification number on a public page is a permanent identity-theft surface
  * that buys nothing: scrapers and search engines pick it up within minutes and
  * it cannot be recalled. tests/privacy.test.ts fails if it reappears.
+ *
+ * The COPY lives in lib/ui-dict.ts so both languages render from this one
+ * component. The DATA below does not: a name, a legal form and an address are
+ * facts, not translations, and duplicating them per locale is how they drift.
  */
 
 /** CONFIRMED by the owner, 2026-09-05 (checklist A4). */
 const LEGAL_ENTITY = "Simion Bărbăcaru";
-const LEGAL_FORM = "persoană fizică";
+/** The legal form is a term of art, so it is stated per language. */
+const LEGAL_FORM: Record<Locale, string> = {
+  ro: "persoană fizică",
+  ru: "физическое лицо",
+};
 /**
- * The address the owner declared for the domain. It must have a real mailbox
- * before go-live — a bouncing controller address is a compliance failure, not a
- * cosmetic one. See docs/work/GO-LIVE.md, Stage 2.
+ * The address the owner declared for the domain. It has a real mailbox as of
+ * 2026-09-06 — a bouncing controller address is a compliance failure, not a
+ * cosmetic one. See docs/work/GO-LIVE.md.
  */
 const CONTACT_EMAIL = "contact@semidom.md";
 
@@ -43,11 +52,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
+  const t = ui(locale);
   return {
-    title: "Politica de confidențialitate",
-    description:
-      "Ce date colectăm prin formularul de contact, în ce scop, cine le procesează, ce cookie-uri folosim și cât timp le păstrăm.",
-    alternates: { canonical: canonicalFor(locale, "/confidentialitate") },
+    title: t.privacy.metaTitle,
+    description: t.privacy.metaDescription,
+    alternates: {
+      canonical: canonicalFor(locale, "/confidentialitate"),
+      languages: languageAlternates("/confidentialitate"),
+    },
     robots: robotsMeta(locale),
   };
 }
@@ -55,120 +67,65 @@ export async function generateMetadata({
 export default async function PrivacyPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  // Every new route must repeat this guard, or generateStaticParams will
-  // prerender it under /ru with Romanian copy (ADR-011: no partial translation).
+  // Every new route repeats this guard, or generateStaticParams would prerender
+  // an unpublished locale with the wrong language (ADR-011).
   if (!publishedLocales.includes(locale)) notFound();
+
+  const t = ui(locale);
 
   return (
     <article className="bg-canvas pb-24 pt-32 sm:pt-36">
       <Container className="max-w-[44rem]">
-        <Kicker>Date personale</Kicker>
-        <h1 className="mt-5 text-display-2 text-ink">Politica de confidențialitate</h1>
-        <p className="mt-5 text-lead text-ink-soft">
-          Această pagină explică ce date primim prin formularul de pe site, de ce le folosim, cine
-          le mai vede, ce cookie-uri folosim și cât timp le păstrăm.
-        </p>
-        <p className="mt-3 text-sm text-muted">Versiunea {POLICY_VERSION}.</p>
+        <Kicker>{t.privacy.kicker}</Kicker>
+        <h1 className="mt-5 text-display-2 text-ink">{t.privacy.title}</h1>
+        <p className="mt-5 text-lead text-ink-soft">{t.privacy.lead}</p>
+        <p className="mt-3 text-sm text-muted">{t.privacy.version(POLICY_VERSION)}</p>
 
-        <Section title="Cine prelucrează datele">
+        <Section title={t.privacy.controllerTitle}>
+          <P>{t.privacy.controllerBody(LEGAL_ENTITY, LEGAL_FORM[locale], site.name)}</P>
           <P>
-            Operatorul datelor este <strong className="font-semibold text-ink">{LEGAL_ENTITY}</strong>{" "}
-            ({LEGAL_FORM}), care activează sub denumirea comercială {site.name}, în Republica
-            Moldova.
-          </P>
-          <P>
-            Ne poți contacta la <A href={`tel:${phone.e164}`}>{phone.display}</A> sau la{" "}
-            <A href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</A>.
+            {t.privacy.contactBody} <A href={`tel:${phone.e164}`}>{phone.display}</A>{" "}
+            {t.privacy.contactOr} <A href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</A>.
           </P>
         </Section>
 
-        <Section title="Ce date colectăm">
-          <P>Doar ce completezi tu în formular:</P>
-          <Ul
-            items={[
-              "numele tău",
-              "numărul de telefon",
-              "adresa de e-mail, dacă o completezi (este opțională)",
-              "localitatea, dacă o completezi",
-              "serviciul pe care îl cauți și metoda de contact preferată",
-              "detaliile pe care le scrii despre lucrare",
-            ]}
-          />
-          <P>
-            Nu îți cerem adresa exactă, buletinul sau date de plată. Serverul care găzduiește
-            site-ul înregistrează, ca orice server web, adresa IP a cererii; noi o folosim doar ca
-            să limităm trimiterile automate, într-o formă criptată ireversibil, și nu o stocăm
-            alături de datele tale.
-          </P>
+        <Section title={t.privacy.collectTitle}>
+          <P>{t.privacy.collectLead}</P>
+          <Ul items={t.privacy.collectItems} />
+          <P>{t.privacy.collectNote}</P>
         </Section>
 
-        <Section title="De ce le folosim">
-          <P>
-            Ca să răspundem la cererea ta: să te sunăm, să clarificăm lucrarea și să îți dăm un
-            interval de preț. Temeiul este consimțământul tău, exprimat prin bifa din formular,
-            împreună cu pregătirea unui eventual contract, la cererea ta. Îți poți retrage
-            consimțământul oricând, sunându-ne sau scriindu-ne.
-          </P>
-          <P>
-            Nu trimitem newslettere, nu facem marketing, nu profilăm și nu vindem datele nimănui.
-          </P>
+        <Section title={t.privacy.whyTitle}>
+          <P>{t.privacy.whyBody}</P>
+          <P>{t.privacy.whyNoMarketing}</P>
         </Section>
 
-        <Section title="Cine le mai vede">
-          <P>
-            Cererea îți ajunge la noi pe e-mail. Pentru asta folosim doi furnizori, care procesează
-            datele strict în numele nostru:
-          </P>
-          <Ul
-            items={[
-              "Resend — serviciul care livrează e-mailul cu cererea ta. Serverele sale sunt în afara Republicii Moldova, în Statele Unite.",
-              "Vercel — găzduirea site-ului, care păstrează pe termen scurt jurnale tehnice ale cererilor (inclusiv adresa IP).",
-            ]}
-          />
-          <P>
-            În rest, datele nu ajung la nimeni altcineva. Nu le transmitem altor meșteri, furnizori
-            de materiale sau agenții de publicitate.
-          </P>
+        <Section title={t.privacy.sharedTitle}>
+          <P>{t.privacy.sharedLead}</P>
+          <Ul items={t.privacy.sharedItems} />
+          <P>{t.privacy.sharedNote}</P>
         </Section>
 
-        <Section title="Cookie-uri și tehnologii similare">
-          <P>
-            <strong className="font-semibold text-ink">Site-ul nu folosește cookie-uri.</strong> Nu
-            avem cookie-uri de urmărire, de publicitate sau de analiză, nu folosim pixeli de
-            remarketing și nu încărcăm scripturi din alte domenii. De aceea nu vezi nicio fereastră
-            de consimțământ pentru cookie-uri: nu am avea pentru ce să ți-o cerem.
-          </P>
-          <P>
-            Formularul folosește doar memoria paginii pe durata completării, care dispare când
-            închizi fila. Dacă vom adăuga vreodată statistici de trafic, îți vom cere întâi acordul
-            printr-un banner și vom actualiza această pagină înainte de a porni ceva.
-          </P>
+        <Section title={t.privacy.cookiesTitle}>
+          <P>{t.privacy.cookiesBody}</P>
+          <P>{t.privacy.cookiesFuture}</P>
         </Section>
 
-        <Section title="Cât timp le păstrăm">
-          <P>
-            Păstrăm cererea cât timp discutăm despre lucrare și, dacă lucrarea se face, pe durata
-            garanției. Dacă nu ajungem la o colaborare, ștergem mesajul din cutia poștală în cel
-            mult 12 luni.
-          </P>
+        <Section title={t.privacy.retentionTitle}>
+          <P>{t.privacy.retentionBody}</P>
         </Section>
 
-        <Section title="Drepturile tale">
+        <Section title={t.privacy.rightsTitle}>
           <P>
-            Poți cere oricând să afli ce date avem despre tine, să le corectăm sau să le ștergem,
-            să îți retragi consimțământul și să te opui folosirii lor. Ne suni la{" "}
-            <A href={`tel:${phone.e164}`}>{phone.display}</A> sau ne scrii la{" "}
-            <A href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</A> și rezolvăm.
+            {t.privacy.rightsBody} <A href={`tel:${phone.e164}`}>{phone.display}</A>{" "}
+            {t.privacy.contactOr} <A href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</A>.
           </P>
-          <P>
-            Dacă nu ești mulțumit de răspuns, te poți adresa Centrului Național pentru Protecția
-            Datelor cu Caracter Personal al Republicii Moldova.
-          </P>
+          <P>{t.privacy.rightsAuthority}</P>
         </Section>
 
         <p className="mt-12 border-t border-line pt-6 text-sm text-muted">
           <Link className="underline underline-offset-4 hover:text-ink" href={`/${locale}#contact`}>
-            Înapoi la formularul de contact
+            {t.privacy.backToForm}
           </Link>
         </p>
       </Container>
@@ -176,11 +133,7 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
       {/* Every public route renders an id="contact", so the header CTA and the
           mobile bar always have a target on the page the visitor is reading. */}
       <div id="contact" className="mt-20">
-        <ContactBand
-          locale={locale}
-          title="Ai o întrebare despre datele tale?"
-          body="Sună-ne și rezolvăm. Pentru o cerere de lucrare, formularul complet este pe pagina principală."
-        />
+        <ContactBand locale={locale} title={t.privacy.bandTitle} body={t.privacy.bandBody} />
       </div>
     </article>
   );
@@ -207,7 +160,7 @@ function A({ href, children }: { href: string; children: React.ReactNode }) {
   );
 }
 
-function Ul({ items }: { items: string[] }) {
+function Ul({ items }: { items: readonly string[] }) {
   return (
     <ul className="space-y-2 text-base leading-relaxed text-ink-soft">
       {items.map((item) => (

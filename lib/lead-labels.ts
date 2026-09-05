@@ -10,6 +10,8 @@
  * NOTHING in this file may import zod.
  */
 
+import type { Locale } from "@/lib/i18n";
+
 export const contactPreferences = ["telefon", "whatsapp", "viber", "telegram", "email"] as const;
 export type ContactPreference = (typeof contactPreferences)[number];
 
@@ -27,13 +29,33 @@ export const PREFERENCE_CHANNEL: Record<ContactPreference, string> = {
   email: "email",
 };
 
-export const contactPreferenceLabels: Record<ContactPreference, string> = {
-  telefon: "Apel telefonic",
-  whatsapp: "WhatsApp",
-  viber: "Viber",
-  telegram: "Telegram",
-  email: "E-mail",
+/**
+ * Per-locale display labels. NOT a Partial: a missing language is a compile
+ * error rather than a Russian form offering Romanian options.
+ *
+ * `Locale` is a type-only import — this file must stay free of zod (D-017),
+ * and lib/i18n.ts brings nothing with it.
+ */
+const contactPreferenceLabelsByLocale: Record<Locale, Record<ContactPreference, string>> = {
+  ro: {
+    telefon: "Apel telefonic",
+    whatsapp: "WhatsApp",
+    viber: "Viber",
+    telegram: "Telegram",
+    email: "E-mail",
+  },
+  ru: {
+    telefon: "Телефонный звонок",
+    whatsapp: "WhatsApp",
+    viber: "Viber",
+    telegram: "Telegram",
+    email: "E-mail",
+  },
 };
+
+export function getContactPreferenceLabels(locale: Locale): Record<ContactPreference, string> {
+  return contactPreferenceLabelsByLocale[locale];
+}
 
 /**
  * Explicit tuple, NOT derived from `services.map(...)`. A spread of a mapped
@@ -49,13 +71,26 @@ export const leadServiceSlugs = [
 ] as const;
 export type LeadServiceSlug = (typeof leadServiceSlugs)[number];
 
-export const leadServiceLabels: Record<LeadServiceSlug, string> = {
-  "gresie-faianta": "Montaj gresie și faianță",
-  "renovari-bai": "Renovare de baie la cheie",
-  "teracota-sobe": "Teracotă și plăci ceramice",
-  "placari-exterioare": "Placări exterioare și terase",
-  altceva: "Altceva / nu sunt sigur",
+const leadServiceLabelsByLocale: Record<Locale, Record<LeadServiceSlug, string>> = {
+  ro: {
+    "gresie-faianta": "Montaj gresie și faianță",
+    "renovari-bai": "Renovare de baie la cheie",
+    "teracota-sobe": "Teracotă și plăci ceramice",
+    "placari-exterioare": "Placări exterioare și terase",
+    altceva: "Altceva / nu sunt sigur",
+  },
+  ru: {
+    "gresie-faianta": "Укладка плитки",
+    "renovari-bai": "Ремонт ванной под ключ",
+    "teracota-sobe": "Терракота и декоративная керамика",
+    "placari-exterioare": "Наружная облицовка и террасы",
+    altceva: "Другое / пока не знаю",
+  },
 };
+
+export function getLeadServiceLabels(locale: Locale): Record<LeadServiceSlug, string> {
+  return leadServiceLabelsByLocale[locale];
+}
 
 /** The fields the form can show an error against, plus a form-level slot. */
 export type LeadFieldKey =

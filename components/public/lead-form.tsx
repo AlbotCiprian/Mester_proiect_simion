@@ -4,14 +4,16 @@ import { useActionState, useEffect, useId, useRef } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { submitLead } from "@/app/actions/lead";
+import type { Locale } from "@/lib/i18n";
+import { ui } from "@/lib/ui-dict";
 import { phone, publicChannels } from "@/lib/content";
 // lib/lead-labels, NOT lib/lead: importing the schema module would pull zod into
 // the client bundle (measured: +19.3 kB brotli) for six plain constants.
 import {
-  contactPreferenceLabels,
+  getContactPreferenceLabels,
   contactPreferences,
   PREFERENCE_CHANNEL,
-  leadServiceLabels,
+  getLeadServiceLabels,
   leadServiceSlugs,
   type ContactPreference,
   type LeadFieldErrors,
@@ -52,7 +54,13 @@ const offeredPreferences: ContactPreference[] = (() => {
   return confirmed.length > 0 ? confirmed : ["telefon"];
 })();
 
-export function LeadForm({ locale }: { locale: string }) {
+export function LeadForm({ locale }: { locale: Locale }) {
+  const t = ui(locale);
+  // Resolved once per render: the option lists must match the language of the
+  // labels around them, and a mismatch here is invisible until a Russian
+  // visitor sees a Romanian dropdown.
+  const serviceLabels = getLeadServiceLabels(locale);
+  const preferenceLabels = getContactPreferenceLabels(locale);
   const [state, formAction] = useActionState<LeadResult | null, FormData>(submitLead, null);
   const uid = useId();
   const mountedAt = useRef<number>(0);
@@ -102,15 +110,17 @@ export function LeadForm({ locale }: { locale: string }) {
   if (state?.status === "success") {
     return (
       <Outcome tone="success" innerRef={statusRef} live="status">
-        <p className="font-display text-2xl text-canvas">Cererea a plecat spre noi.</p>
+        <p className="font-display text-2xl text-canvas">{t.form.successTitle}</p>
         <p className="mt-3 text-canvas/75">
-          Revenim cu un răspuns la numărul lăsat. Dacă vrei mai repede, sună direct la{" "}
+          {t.form.successBody}{" "}
           <a className="font-semibold text-bronze-light underline underline-offset-4" href={`tel:${phone.e164}`}>
             {phone.display}
           </a>
-          .
+          {t.form.successBodyTail}
         </p>
-        <p className="mt-4 text-xs text-canvas/60">Referință: {state.reference}</p>
+        <p className="mt-4 text-xs text-canvas/60">
+          {t.form.reference}: {state.reference}
+        </p>
       </Outcome>
     );
   }
@@ -123,23 +133,22 @@ export function LeadForm({ locale }: { locale: string }) {
           database behind the form, an undelivered request is simply lost. */}
       {state?.status === "undelivered" ? (
         <Outcome tone="danger" innerRef={statusRef} live="alert" className="mb-8">
-          <p className="font-display text-xl text-canvas">Nu am putut trimite cererea.</p>
+          <p className="font-display text-xl text-canvas">{t.form.undeliveredTitle}</p>
           <p className="mt-3 text-canvas/75">
-            A fost o problemă tehnică la trimitere, iar cererea ta nu a ajuns la noi. Te rugăm sună la{" "}
+            {t.form.undeliveredBody}{" "}
             <a className="font-semibold text-bronze-light underline underline-offset-4" href={`tel:${phone.e164}`}>
               {phone.display}
             </a>{" "}
-            — răspundem direct.
+            {t.form.undeliveredTail}
           </p>
         </Outcome>
       ) : null}
 
       {state?.status === "rate_limited" ? (
         <Outcome tone="danger" innerRef={statusRef} live="alert" className="mb-8">
-          <p className="font-display text-xl text-canvas">Prea multe trimiteri într-un timp scurt</p>
+          <p className="font-display text-xl text-canvas">{t.form.rateLimitedTitle}</p>
           <p className="mt-3 text-canvas/75">
-            Formularul limitează numărul de trimiteri, așa că ultima nu a fost procesată. Mai
-            încearcă peste câteva minute sau sună direct la{" "}
+            {t.form.rateLimitedBody}{" "}
             <a className="font-semibold text-bronze-light underline underline-offset-4" href={`tel:${phone.e164}`}>
               {phone.display}
             </a>
@@ -158,7 +167,7 @@ export function LeadForm({ locale }: { locale: string }) {
           {/* Falls back to any error whose field is not rendered inline —
               otherwise the banner says "correct the fields below" while every
               visible field looks clean and nothing can be corrected. */}
-          {unrenderedError(errors) ?? "Mai sunt câteva câmpuri de corectat mai jos."}
+          {unrenderedError(errors) ?? t.form.invalidBanner}
         </div>
       ) : null}
 
@@ -187,29 +196,29 @@ export function LeadForm({ locale }: { locale: string }) {
         <Field
           id={`${uid}-name`}
           name="name"
-          label="Nume"
+          label={t.form.nameLabel}
           required
           autoComplete="name"
-          placeholder="Ion Popescu"
+          placeholder={t.form.namePlaceholder}
           error={errors.name}
         />
 
         <Field
           id={`${uid}-phone`}
           name="phone"
-          label="Telefon"
+          label={t.form.phoneLabel}
           type="tel"
           required
           inputMode="tel"
           autoComplete="tel"
-          placeholder="069 123 456"
+          placeholder={t.form.phonePlaceholder}
           error={errors.phone}
-          hint="Îl folosim doar ca să revenim cu un răspuns."
+          hint={t.form.phoneHint}
         />
 
         <div>
           <label className={LABEL} htmlFor={`${uid}-service`}>
-            Ce ai de făcut <Req />
+            {t.form.serviceLabel} <Req />
           </label>
           <div className="relative mt-2">
             <select
@@ -223,7 +232,7 @@ export function LeadForm({ locale }: { locale: string }) {
             >
               {leadServiceSlugs.map((slug) => (
                 <option key={slug} value={slug} className="bg-ink text-canvas">
-                  {leadServiceLabels[slug]}
+                  {serviceLabels[slug]}
                 </option>
               ))}
             </select>
@@ -235,9 +244,9 @@ export function LeadForm({ locale }: { locale: string }) {
         <Field
           id={`${uid}-locality`}
           name="locality"
-          label="Localitate"
+          label={t.form.localityLabel}
           autoComplete="address-level2"
-          placeholder="Chișinău, sect. Botanica"
+          placeholder={t.form.localityPlaceholder}
           error={errors.locality}
         />
 
@@ -248,7 +257,7 @@ export function LeadForm({ locale }: { locale: string }) {
         {offeredPreferences.length > 1 ? (
           <div>
             <label className={LABEL} htmlFor={`${uid}-pref`}>
-              Cum preferi să te contactăm
+              {t.form.preferenceLabel}
             </label>
             <div className="relative mt-2">
               <select
@@ -259,7 +268,7 @@ export function LeadForm({ locale }: { locale: string }) {
               >
                 {offeredPreferences.map((p) => (
                   <option key={p} value={p} className="bg-ink text-canvas">
-                    {contactPreferenceLabels[p]}
+                    {preferenceLabels[p]}
                   </option>
                 ))}
               </select>
@@ -273,23 +282,23 @@ export function LeadForm({ locale }: { locale: string }) {
         <Field
           id={`${uid}-email`}
           name="email"
-          label="E-mail"
+          label={t.form.emailLabel}
           type="email"
           autoComplete="email"
-          placeholder="opțional"
+          placeholder={t.form.emailPlaceholder}
           error={errors.email}
         />
 
         <div className="sm:col-span-2">
           <label className={LABEL} htmlFor={`${uid}-message`}>
-            Detalii
+            {t.form.messageLabel}
           </label>
           <textarea
             id={`${uid}-message`}
             name="message"
             rows={4}
             maxLength={1500}
-            placeholder="Suprafața aproximativă, starea încăperii, termenul dorit…"
+            placeholder={t.form.messagePlaceholder}
             aria-invalid={errors.message ? true : undefined}
             aria-describedby={errors.message ? `${uid}-message-err` : undefined}
             className={`${FIELD} ${errors.message ? FIELD_ERR : FIELD_OK} mt-2 resize-y`}
@@ -310,24 +319,23 @@ export function LeadForm({ locale }: { locale: string }) {
             {/* A checkbox cannot discharge the information duty on its own: the
                 notice has to be reachable from the point of collection. */}
             <span>
-              Am citit{" "}
+              {t.form.consentPrefix}{" "}
               <Link
                 href={`/${locale}/confidentialitate`}
                 className="font-medium text-bronze-light underline underline-offset-4"
               >
-                politica de confidențialitate
+                {t.form.consentLink}
               </Link>{" "}
-              și sunt de acord să fiu contactat în legătură cu această cerere. Datele nu sunt
-              folosite în alt scop și nu sunt transmise mai departe. <Req />
+              {t.form.consentSuffix} <Req />
             </span>
           </label>
           <FieldError id={`${uid}-consent-err`} message={errors.consent} />
         </div>
 
         <div className="sm:col-span-2">
-          <SubmitButton />
+          <SubmitButton locale={locale} />
           <p className="mt-3 text-xs text-canvas/60">
-            Preferi să vorbești direct? Sună la{" "}
+            {t.form.footnote}{" "}
             <a className="text-canvas/70 underline underline-offset-4" href={`tel:${phone.e164}`}>
               {phone.display}
             </a>
@@ -339,7 +347,8 @@ export function LeadForm({ locale }: { locale: string }) {
   );
 }
 
-function SubmitButton() {
+function SubmitButton({ locale }: { locale: Locale }) {
+  const t = ui(locale);
   const { pending } = useFormStatus();
   return (
     <button
@@ -347,7 +356,7 @@ function SubmitButton() {
       disabled={pending}
       className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xs border border-bronze-deep bg-bronze-deep px-6 py-3.5 text-sm font-semibold tracking-wide text-canvas-raised transition-colors hover:bg-bronze disabled:cursor-progress disabled:opacity-70"
     >
-      {pending ? "Se trimite…" : "Trimite cererea"}
+      {pending ? t.form.submitting : t.form.submit}
       {pending ? null : <Arrow />}
     </button>
   );

@@ -18,13 +18,15 @@ import { CinematicHeroControls } from "@/components/public/hero/cinematic-hero-c
 // - renders the LCP poster (eager <picture>) + semantic copy + CTAs;
 // - mounts the client controls island only when publication is allowed.
 export function CinematicHero({ locale }: { locale: Locale }) {
-  const copy = heroCopy[locale] ?? heroCopy.ro;
-  if (!copy) return null;
+  // No fallback. heroCopy is total over Locale, so there is nothing to fall
+  // back TO — which is the point: a silent fallback is how the Russian page
+  // ended up with a Romanian H1.
+  const copy = heroCopy[locale];
 
   // SERVER-SIDE rights gate (spec 29 §16).
   const publish = canPublish(heroMedia);
   const disclosure = publish ? disclosureFor(heroMedia.rightsStatus) : null;
-  const media = publish ? toPublicDTO(heroMedia) : null;
+  const media = publish ? toPublicDTO(heroMedia, locale) : null;
 
   return (
     <section

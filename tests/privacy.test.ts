@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { locales } from "@/lib/i18n";
+import { ui } from "@/lib/ui-dict";
 
 /**
  * Personal data that must never reach the shipped source.
@@ -119,11 +121,51 @@ describe("the privacy notice still discharges the information duty", () => {
     assert.match(privacy, /tel:/, "no phone route for a data-subject request");
   });
 
-  it("still states the cookie position", () => {
-    assert.match(privacy, /Cookie-uri/, "the cookie section disappeared");
-  });
+  /**
+   * The COPY moved to lib/ui-dict.ts when the notice became bilingual, so these
+   * assert against the dictionary rather than the component — and against EVERY
+   * locale, which is stronger than what they checked before. A Russian privacy
+   * notice missing the cookie statement or the supervisory authority is not a
+   * translation gap, it is a compliance gap.
+   */
+  for (const locale of locales) {
+    const t = ui(locale);
 
-  it("still points at the supervisory authority", () => {
-    assert.match(privacy, /Centrului Național pentru Protecția/, "no supervisory authority named");
-  });
+    it(`[${locale}] states the cookie position`, () => {
+      assert.ok(t.privacy.cookiesTitle.length > 0, "the cookie section disappeared");
+      assert.ok(
+        t.privacy.cookiesBody.length > 80,
+        "the cookie statement is too short to say anything",
+      );
+    });
+
+    it(`[${locale}] names the supervisory authority`, () => {
+      // Romanian: "Centrului Național pentru Protecția Datelor…"
+      // Russian:  "Национальный центр по защите персональных данных…"
+      assert.match(
+        t.privacy.rightsAuthority,
+        /Centrul|Centrului|Национальный центр/,
+        "no supervisory authority named",
+      );
+    });
+
+    it(`[${locale}] names the two processors by name`, () => {
+      const shared = t.privacy.sharedItems.join(" ");
+      assert.match(shared, /Resend/, "Resend is not disclosed");
+      assert.match(shared, /Vercel/, "Vercel is not disclosed");
+    });
+
+    it(`[${locale}] states the legal basis and the right to withdraw`, () => {
+      assert.match(
+        t.privacy.whyBody,
+        /consimțământ|согласие|согласия/i,
+        "consent is not named as the basis",
+      );
+      assert.match(
+        t.privacy.whyBody,
+        /retrage|отозвать/i,
+        "the right to withdraw consent is missing",
+      );
+    });
+  }
 });

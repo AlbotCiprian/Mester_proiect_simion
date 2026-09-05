@@ -1,5 +1,7 @@
 import Image from "next/image";
-import { baie, tour, type JourneyStill } from "@/lib/journey";
+import { getBaieChapter, tour, type JourneyStill } from "@/lib/journey";
+import type { Locale } from "@/lib/i18n";
+import { ui } from "@/lib/ui-dict";
 import { Arrow, Button, Container, Kicker } from "@/components/public/ui";
 
 // Always server-rendered. This is the accessible / no-JS / reduced-motion /
@@ -9,7 +11,9 @@ import { Arrow, Button, Container, Kicker } from "@/components/public/ui";
 // Since the chapter no longer ships a frame sequence (lib/journey.ts, D-006),
 // this block is what most visitors actually see, so it carries the full stage
 // story rather than a single representative frame.
-export function JourneyStatic() {
+export function JourneyStatic({ locale }: { locale: Locale }) {
+  const t = ui(locale);
+  const baie = getBaieChapter(locale);
   const { price, media } = baie;
   const middle = media.stages.slice(1, -1);
 
@@ -25,8 +29,8 @@ export function JourneyStatic() {
         <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_0.9fr] lg:items-start">
           <figure className="relative">
             <div className="grid grid-cols-2 gap-3">
-              <StageFrame still={media.before} label="Înainte" tone="ink" ratio="aspect-[3/4]" />
-              <StageFrame still={media.after} label="După" tone="bronze" ratio="aspect-[3/4]" />
+              <StageFrame still={media.before} label={t.home.before} tone="ink" ratio="aspect-[3/4]" />
+              <StageFrame still={media.after} label={t.home.after} tone="bronze" ratio="aspect-[3/4]" />
             </div>
 
             {/* Middle stages. Labels sit UNDER the frame: at three-across on a
@@ -55,12 +59,14 @@ export function JourneyStatic() {
           </figure>
 
           <aside className="rounded-sm border border-line-strong bg-canvas-raised p-6 sm:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-bronze-deep">Preț orientativ</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-bronze-deep">{t.journey.priceKicker}</p>
             <p className="mt-2 text-2xl font-semibold text-ink">
-              {price.from === null ? "La cerere" : `de la ${price.from} ${price.unit}`}
+              {price.from === null ? t.journey.priceOnRequest : `${price.from} ${price.unit ?? ""}`}
             </p>
-            <p className="mt-1 text-xs text-muted">Include: {price.includes.join(", ")}.</p>
-            <p className="mt-1 text-xs text-muted">Evaluarea finală depinde de suprafață și condiții.</p>
+            <p className="mt-1 text-xs text-muted">
+              {t.journey.includes}: {price.includes.join(", ")}.
+            </p>
+            <p className="mt-1 text-xs text-muted">{t.journey.finalNote}</p>
 
             <div className="mt-6 border-t border-line pt-5">
               <Button href={baie.cta.href} variant="bronze" className="w-full">
@@ -82,7 +88,7 @@ export function JourneyStatic() {
             poster={tour.poster}
             width={tour.width}
             height={tour.height}
-            aria-label={tour.caption}
+            aria-label={tour.caption[locale]}
             controls
             muted
             loop
@@ -92,9 +98,9 @@ export function JourneyStatic() {
           {/* figcaption must be a direct child of figure — hence the spans. */}
           <figcaption>
             <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-bronze-deep">
-              {tour.label}
+              {tour.label[locale]}
             </span>
-            <span className="mt-2 block max-w-md text-sm text-ink-soft">{tour.caption}</span>
+            <span className="mt-2 block max-w-md text-sm text-ink-soft">{tour.caption[locale]}</span>
           </figcaption>
         </figure>
       </Container>
