@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Resend } from "resend";
-import { env, leadDeliveryConfigured } from "@/lib/env";
+import { env, leadDeliveryConfigured, misplacedResendKeyVars, missingDeliveryVars } from "@/lib/env";
 import { contactPreferenceLabels, leadServiceLabels, type Lead } from "@/lib/lead";
 import { LEAD_SOURCE_LABELS, type LeadSource } from "@/lib/lead-source";
 
@@ -123,7 +123,18 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
  * truth, and an exception here would surface as a generic 500 instead.
  */
 export async function deliverLead(lead: Lead, meta: LeadMeta): Promise<DeliveryOutcome> {
-  if (!leadDeliveryConfigured()) return "not_configured";
+  if (!leadDeliveryConfigured()) {
+    // Say WHICH variable is missing. Names only — never a value.
+    const missing = missingDeliveryVars().join(",");
+    const misplaced = misplacedResendKeyVars();
+    console.error(
+      `[lead:${meta.reference}] delivery=not_configured missing=${missing}` +
+        (misplaced.length
+          ? ` hint=a_resend_looking_key_is_set_as:${misplaced.join(",")}_but_the_code_reads_RESEND_API_KEY`
+          : ""),
+    );
+    return "not_configured";
+  }
 
   const rows = buildRows(lead, meta);
   const subject = singleLine(

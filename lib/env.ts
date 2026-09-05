@@ -28,9 +28,46 @@ export const env = {
   vercelEnv: read("VERCEL_ENV"),
 } as const;
 
+/** The three variables a lead needs in order to reach a human. */
+const DELIVERY_VARS = ["RESEND_API_KEY", "LEAD_FROM_EMAIL", "LEAD_TO_EMAIL"] as const;
+
+/**
+ * Which of the delivery variables are missing, by NAME.
+ *
+ * The log line used to say only `delivery=not_configured`, which is true and
+ * useless: it cost a round-trip to discover that the key had been set under a
+ * different variable name. A missing variable is the single most likely reason
+ * a live form silently stops producing leads, so the log says which one.
+ *
+ * Names only. The values are secrets and never appear in a log line.
+ */
+export function missingDeliveryVars(): string[] {
+  const present: Record<(typeof DELIVERY_VARS)[number], boolean> = {
+    RESEND_API_KEY: Boolean(env.resendApiKey),
+    LEAD_FROM_EMAIL: Boolean(env.leadFromEmail),
+    LEAD_TO_EMAIL: Boolean(env.leadToEmail),
+  };
+  return DELIVERY_VARS.filter((name) => !present[name]);
+}
+
 /** True only when a lead can actually reach a human. */
 export function leadDeliveryConfigured(): boolean {
-  return Boolean(env.resendApiKey && env.leadFromEmail && env.leadToEmail);
+  return missingDeliveryVars().length === 0;
+}
+
+/**
+ * A key that looks like a Resend key but is sitting under a name nothing reads.
+ *
+ * Checked because it has already happened: the key was set as a differently
+ * named variable and the form reported `not_configured` with no hint why.
+ * Reports the VARIABLE NAME only — never the value, not even a prefix.
+ */
+export function misplacedResendKeyVars(): string[] {
+  if (env.resendApiKey) return [];
+  return Object.entries(process.env)
+    .filter(([name, value]) => name !== "RESEND_API_KEY" && typeof value === "string" && /^re_[A-Za-z0-9]/.test(value.trim()))
+    .map(([name]) => name)
+    .sort();
 }
 
 /**
