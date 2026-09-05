@@ -34,6 +34,24 @@ export const metadata: Metadata = {
   // One predicate governs indexability, in lib/seo.ts. `undefined` lets Next
   // omit the tag entirely once Gate A closes on the confirmed production host.
   robots: robotsMeta(),
+  /**
+   * Search Console verification, HTML-tag method.
+   *
+   * A second, independent path to verifying the site, because the DNS method
+   * kept failing: the domain's nameservers are Vercel's, so the TXT record was
+   * being added in a cPanel zone that nothing on the internet queries.
+   *
+   * The token is NOT a secret — Google's whole design is that it is published,
+   * either in public DNS or in a public page. It still comes from an env var
+   * rather than a literal so that a Preview deployment, which must never be
+   * verified as the production site, simply does not carry the tag.
+   *
+   * Set GOOGLE_SITE_VERIFICATION in Vercel (Production) to the token Search
+   * Console shows for a **URL prefix** property. Absent, Next omits the tag.
+   */
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

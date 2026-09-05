@@ -14,8 +14,31 @@ function read(name: string): string | undefined {
   return value ? value : undefined;
 }
 
+/**
+ * Names the Resend key may be stored under, in priority order.
+ *
+ * `RESEND_API_KEY` is canonical and is what the documentation says. `RESEND_token`
+ * is accepted because that is the name the key is actually stored under in the
+ * Vercel Production environment, and the owner set it as a **Secret** — a Vercel
+ * secret cannot be read back after saving, so renaming it means re-pasting a key
+ * nobody can retrieve any more. Accepting both costs one line; making the owner
+ * revoke and regenerate a working key to satisfy a naming convention does not.
+ *
+ * Add a name here rather than adding a second lookup somewhere else: this array
+ * is also what missingDeliveryVars() reports, so the diagnostics stay honest.
+ */
+const RESEND_KEY_NAMES = ["RESEND_API_KEY", "RESEND_token"] as const;
+
+function readFirst(names: readonly string[]): string | undefined {
+  for (const name of names) {
+    const value = read(name);
+    if (value) return value;
+  }
+  return undefined;
+}
+
 export const env = {
-  resendApiKey: read("RESEND_API_KEY"),
+  resendApiKey: readFirst(RESEND_KEY_NAMES),
   /** Verified sender, e.g. "SemiDom <contact@domeniu.md>". */
   leadFromEmail: read("LEAD_FROM_EMAIL"),
   /** Where new requests land — the owner's inbox. */
@@ -28,7 +51,7 @@ export const env = {
   vercelEnv: read("VERCEL_ENV"),
 } as const;
 
-/** The three variables a lead needs in order to reach a human. */
+/** The three things a lead needs in order to reach a human. */
 const DELIVERY_VARS = ["RESEND_API_KEY", "LEAD_FROM_EMAIL", "LEAD_TO_EMAIL"] as const;
 
 /**
@@ -47,7 +70,11 @@ export function missingDeliveryVars(): string[] {
     LEAD_FROM_EMAIL: Boolean(env.leadFromEmail),
     LEAD_TO_EMAIL: Boolean(env.leadToEmail),
   };
-  return DELIVERY_VARS.filter((name) => !present[name]);
+  return DELIVERY_VARS.filter((name) => !present[name]).map((name) =>
+    // Report every accepted spelling, so someone reading the log knows the key
+    // may equally be set under the alias rather than the canonical name.
+    name === "RESEND_API_KEY" ? RESEND_KEY_NAMES.join("|") : name,
+  );
 }
 
 /** True only when a lead can actually reach a human. */
@@ -64,8 +91,14 @@ export function leadDeliveryConfigured(): boolean {
  */
 export function misplacedResendKeyVars(): string[] {
   if (env.resendApiKey) return [];
+  const known: readonly string[] = RESEND_KEY_NAMES;
   return Object.entries(process.env)
-    .filter(([name, value]) => name !== "RESEND_API_KEY" && typeof value === "string" && /^re_[A-Za-z0-9]/.test(value.trim()))
+    .filter(
+      ([name, value]) =>
+        !known.includes(name) &&
+        typeof value === "string" &&
+        /^re_[A-Za-z0-9]/.test(value.trim()),
+    )
     .map(([name]) => name)
     .sort();
 }

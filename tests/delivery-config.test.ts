@@ -17,13 +17,27 @@ import { misplacedResendKeyVars, missingDeliveryVars } from "@/lib/env";
  */
 
 describe("delivery configuration diagnostics", () => {
+  it("accepts the key under either name", async () => {
+    // The Vercel Production secret is stored as RESEND_token, and a Vercel
+    // secret cannot be read back after saving — so the alias is load-bearing,
+    // not a convenience. If someone "tidies" it away, the live form stops
+    // delivering and the only symptom is a lead that never arrives.
+    const source = await import("node:fs").then((fs) =>
+      fs.readFileSync(new URL("../lib/env.ts", import.meta.url), "utf8"),
+    );
+    assert.match(source, /RESEND_KEY_NAMES = \[[^\]]*"RESEND_API_KEY"/);
+    assert.match(source, /RESEND_KEY_NAMES = \[[^\]]*"RESEND_token"/);
+  });
+
   it("names the missing variables rather than just failing", () => {
     // The test environment sets none of them, so all three must be named.
     const missing = missingDeliveryVars();
     assert.deepEqual(missing.slice().sort(), [
       "LEAD_FROM_EMAIL",
       "LEAD_TO_EMAIL",
-      "RESEND_API_KEY",
+      // Both accepted spellings are reported, so a reader of the log knows the
+      // key may be set under either name.
+      "RESEND_API_KEY|RESEND_token",
     ]);
   });
 
