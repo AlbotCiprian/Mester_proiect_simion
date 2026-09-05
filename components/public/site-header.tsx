@@ -58,18 +58,21 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               carries no meaning without it. Sourced from lib/content.ts so the
               wordmark cannot drift from the brand definition. */}
           <span
-            className={`text-[0.58rem] font-semibold uppercase tracking-[0.16em] sm:text-[0.62rem] sm:tracking-[0.2em] ${descriptor}`}
+            className={`whitespace-nowrap text-[0.58rem] font-semibold uppercase tracking-[0.16em] sm:text-[0.62rem] sm:tracking-[0.2em] ${descriptor}`}
           >
             {site.descriptorShort}
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-6 lg:flex" aria-label="Navigație principală">
+        {/* xl, not lg: at 1024px six items plus the locale switch, the phone
+            and the CTA no longer fit on one line without wrapping. Below xl the
+            hamburger carries the same links. */}
+        <nav className="hidden items-center gap-5 xl:flex 2xl:gap-6" aria-label="Navigație principală">
           {navPages.map((item) => (
             <Link
               key={item.path}
               href={`/${locale}${item.path}`}
-              className={`text-sm font-medium transition-colors ${navLink}`}
+              className={`whitespace-nowrap text-sm font-medium transition-colors ${navLink}`}
             >
               {item.label}
             </Link>
@@ -78,7 +81,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <Link
               key={item.hash}
               href={navHref(locale, item.hash)}
-              className={`text-sm font-medium transition-colors ${navLink}`}
+              className={`whitespace-nowrap text-sm font-medium transition-colors ${navLink}`}
             >
               {item.label}
             </Link>
@@ -86,7 +89,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden items-center gap-1 text-xs xl:flex" aria-label="Limbă">
+          <div className="hidden items-center gap-1 text-xs sm:flex" aria-label="Limbă">
             {locales.map((l) => (
               <Link
                 key={l}
@@ -109,7 +112,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <>
               <a
                 href={phoneChannel.href}
-                className={`hidden items-center gap-2 text-sm font-semibold tracking-wide transition-colors sm:inline-flex ${phoneLink}`}
+                className={`hidden items-center gap-2 whitespace-nowrap text-sm font-semibold tracking-wide transition-colors sm:inline-flex ${phoneLink}`}
               >
                 <PhoneGlyph />
                 {phone.display}
@@ -138,7 +141,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? "Închide meniul" : "Deschide meniul"}
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-xs border transition-colors lg:hidden ${menuBtn}`}
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-xs border transition-colors xl:hidden ${menuBtn}`}
           >
             <span className="sr-only">Meniu</span>
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
@@ -153,7 +156,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       </div>
 
       {open ? (
-        <div id="mobile-menu" className="max-h-[calc(100svh-4.5rem)] overflow-y-auto border-t border-line bg-canvas-raised lg:hidden">
+        <div id="mobile-menu" className="max-h-[calc(100svh-4.5rem)] overflow-y-auto border-t border-line bg-canvas-raised xl:hidden">
           <nav className="mx-auto flex max-w-[78rem] flex-col px-5 py-3 sm:px-8" aria-label="Navigație mobilă">
             {navPages.map((item) => (
               <Link

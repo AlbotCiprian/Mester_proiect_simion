@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { publicChannels, nav, navHref, navPages, phone, site } from "@/lib/content";
-import { landingPages } from "@/lib/landing";
 import { defaultLocale, publishedLocales, type Locale } from "@/lib/i18n";
 import { Container } from "@/components/public/ui";
 import { PhoneGlyph } from "@/components/public/cta";
@@ -77,26 +76,15 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        {/* Every topic page, one click from every page on the site.
-            This is the internal-linking layer: a page reachable only from the
-            sitemap gets crawled late and ranked worse than one linked sitewide. */}
-        <nav aria-label="Footer — servicii" className="mt-14 border-t border-canvas/15 pt-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-canvas/50">
-            Lucrări pe care le executăm
-          </p>
-          <ul className="mt-5 grid gap-x-8 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {landingPages.map((page) => (
-              <li key={page.slug}>
-                <Link
-                  href={`/${linkLocale}/servicii/${page.slug}`}
-                  className="text-sm text-canvas/70 transition-colors hover:text-canvas"
-                >
-                  {page.h1}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        {/* The fifteen topic titles used to be listed here, sitewide, as the
+            internal-linking layer. Removed at the owner's request: it was the
+            longest block on the page and it read as a keyword list.
+
+            The pages are NOT orphaned by this — "Servicii" is in the primary
+            navigation, the hub links all fifteen with descriptions, each page
+            links three siblings, and all fifteen are in the sitemap. The cost is
+            that they are two clicks from the homepage instead of one, which is
+            a slower first crawl and nothing more. */}
 
         <div className="mt-12 flex flex-col gap-4 border-t border-canvas/15 pt-6 text-xs text-canvas/55 sm:flex-row sm:items-center sm:justify-between">
           <p>
