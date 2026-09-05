@@ -15,7 +15,7 @@ import { indexability, normalizeHost } from "@/config/indexability.mjs";
  */
 
 const PROD = "production";
-const HOST = "teracota.xelacktech.com";
+const HOST = "semidom.md";
 const URL = `https://${HOST}`;
 
 /** Mirrors the input of `indexability()`. Declared here rather than derived with

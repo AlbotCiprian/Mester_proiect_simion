@@ -124,12 +124,14 @@ const nextConfig = {
     serverActions: {
       // The 1MB default is absurd for a text form; the schema's maxima sum to <4KB.
       bodySizeLimit: "64kb",
-      // Next already compares Origin against Host, so this is defence in depth —
-      // but the site lives on a SHARED parent domain, and this is specifically
-      // what stops a compromised sibling of xelacktech.com being used as a
-      // launch point against the lead endpoint. Same-origin stays allowed, so
-      // preview deployments keep working.
-      allowedOrigins: ["semidom.xelacktech.com"],
+      // Next already compares Origin against Host, so this is defence in depth.
+      // Both the apex and www are listed because either can serve the form
+      // depending on which one the visitor typed, and a redirect that happens
+      // AFTER a POST would otherwise drop the submission.
+      //
+      // Same-origin is always allowed regardless, so preview deployments and the
+      // .vercel.app aliases keep working without being listed here.
+      allowedOrigins: ["semidom.md", "www.semidom.md"],
     },
   },
 
