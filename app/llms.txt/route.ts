@@ -1,6 +1,6 @@
 import { INDEXABLE, absoluteUrl } from "@/lib/seo";
-import { phone, services, site } from "@/lib/content";
-import { landingPages } from "@/lib/landing";
+import { getServices, getSiteText, phone, site } from "@/lib/content";
+import { getLandingPages } from "@/lib/landing";
 import { defaultLocale } from "@/lib/i18n";
 
 /**
@@ -26,13 +26,13 @@ export function GET(): Response {
   const body = [
     `# ${site.name}`,
     "",
-    `> ${site.tagline}. Montaj de gresie, faianță și renovări complete de baie în Republica Moldova.`,
+    `> ${getSiteText(defaultLocale).tagline}. ${getSiteText(defaultLocale).descriptor} în Republica Moldova.`,
     "",
     "## Servicii",
-    ...services.map((s) => `- [${s.title}](${home}#servicii): ${s.summary}`),
+    ...getServices(defaultLocale).map((s) => `- [${s.title}](${home}#servicii): ${s.summary}`),
     "",
     "## Pagini pe subiecte",
-    ...landingPages.map(
+    ...getLandingPages(defaultLocale).map(
       (page) => `- [${page.h1}](${absoluteUrl(`/${defaultLocale}/servicii/${page.slug}`)}): ${page.metaDescription}`,
     ),
     "",

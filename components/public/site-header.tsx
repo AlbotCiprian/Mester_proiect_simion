@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { contactHash, nav, navHref, navPages, phone, publicChannels, site } from "@/lib/content";
+import { contactHash, getSiteText, nav, navHref, navPages, phone, publicChannels, site } from "@/lib/content";
 import { localeLabels, locales, type Locale } from "@/lib/i18n";
+import { ui } from "@/lib/ui-dict";
 import { Button } from "@/components/public/ui";
 import { PhoneGlyph } from "@/components/public/cta";
 
@@ -33,6 +34,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   // hired by phone, and the number was previously visible only after scrolling
   // to the footer or opening the mobile menu.
   const phoneChannel = publicChannels.find((c) => c.type === "phone");
+  const t = ui(locale);
+  const brandText = getSiteText(locale);
 
   const shell = solid
     ? "site-header--solid border-b border-line/80 bg-canvas/85 backdrop-blur supports-[backdrop-filter]:bg-canvas/70"
@@ -60,21 +63,21 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <span
             className={`whitespace-nowrap text-[0.58rem] font-semibold uppercase tracking-[0.16em] sm:text-[0.62rem] sm:tracking-[0.2em] ${descriptor}`}
           >
-            {site.descriptorShort}
+            {brandText.descriptorShort}
           </span>
         </Link>
 
         {/* xl, not lg: at 1024px six items plus the locale switch, the phone
             and the CTA no longer fit on one line without wrapping. Below xl the
             hamburger carries the same links. */}
-        <nav className="hidden items-center gap-5 xl:flex 2xl:gap-6" aria-label="Navigație principală">
+        <nav className="hidden items-center gap-5 xl:flex 2xl:gap-6" aria-label={t.nav.ariaPrimary}>
           {navPages.map((item) => (
             <Link
               key={item.path}
               href={`/${locale}${item.path}`}
               className={`whitespace-nowrap text-sm font-medium transition-colors ${navLink}`}
             >
-              {item.label}
+              {t.nav[item.key]}
             </Link>
           ))}
           {nav.map((item) => (
@@ -83,13 +86,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               href={navHref(locale, item.hash)}
               className={`whitespace-nowrap text-sm font-medium transition-colors ${navLink}`}
             >
-              {item.label}
+              {t.nav[item.key]}
             </Link>
           ))}
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden items-center gap-1 text-xs sm:flex" aria-label="Limbă">
+          <div className="hidden items-center gap-1 text-xs sm:flex" aria-label={t.nav.ariaLanguage}>
             {locales.map((l) => (
               <Link
                 key={l}
@@ -119,7 +122,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               </a>
               <a
                 href={phoneChannel.href}
-                aria-label={`Sună la ${phone.display}`}
+                aria-label={t.cta.callAria(phone.display)}
                 className={`inline-flex h-10 w-10 items-center justify-center rounded-xs border transition-colors sm:hidden ${menuBtn}`}
               >
                 <PhoneGlyph className="h-[1.15rem] w-[1.15rem]" />
@@ -131,7 +134,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             {/* Relative hash: every public route renders id="contact", so this
                 scrolls in place instead of navigating back to the homepage. */}
             <Button href={contactHash} variant="bronze">
-              Cere o estimare
+              {t.cta.estimate}
             </Button>
           </div>
 
@@ -140,10 +143,10 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls="mobile-menu"
-            aria-label={open ? "Închide meniul" : "Deschide meniul"}
+            aria-label={open ? t.nav.menuClose : t.nav.menuOpen}
             className={`inline-flex h-10 w-10 items-center justify-center rounded-xs border transition-colors xl:hidden ${menuBtn}`}
           >
-            <span className="sr-only">Meniu</span>
+            <span className="sr-only">{t.nav.menuLabel}</span>
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
               {open ? (
                 <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
@@ -157,7 +160,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
 
       {open ? (
         <div id="mobile-menu" className="max-h-[calc(100svh-4.5rem)] overflow-y-auto border-t border-line bg-canvas-raised xl:hidden">
-          <nav className="mx-auto flex max-w-[78rem] flex-col px-5 py-3 sm:px-8" aria-label="Navigație mobilă">
+          <nav className="mx-auto flex max-w-[78rem] flex-col px-5 py-3 sm:px-8" aria-label={t.nav.ariaMobile}>
             {navPages.map((item) => (
               <Link
                 key={item.path}
@@ -165,7 +168,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 onClick={() => setOpen(false)}
                 className="border-b border-line/70 py-3 text-base font-semibold text-ink"
               >
-                {item.label}
+                {t.nav[item.key]}
               </Link>
             ))}
             {nav.map((item) => (
@@ -175,7 +178,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 onClick={() => setOpen(false)}
                 className="border-b border-line/70 py-3 text-base font-medium text-ink-soft"
               >
-                {item.label}
+                {t.nav[item.key]}
               </Link>
             ))}
             {phoneChannel ? (
@@ -190,7 +193,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             ) : null}
             <div className="mt-3 pb-2">
               <Button href={contactHash} variant="bronze" className="w-full">
-                Cere o estimare
+                {t.cta.estimate}
               </Button>
             </div>
           </nav>

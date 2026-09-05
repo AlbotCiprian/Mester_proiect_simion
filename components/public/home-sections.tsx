@@ -1,33 +1,44 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  estimator,
-  faqs,
-  flagship,
-  portfolio,
-  precisionPoints,
-  processSteps,
-  reviews,
-  services,
-  trustFacts,
+  estimatorCtaHref,
+  getEstimator,
+  getFaqs,
+  getFlagship,
+  getPortfolio,
+  getPrecisionPoints,
+  getProcessSteps,
+  getReviews,
+  getServices,
+  getTrustFacts,
 } from "@/lib/content";
 import type { Locale } from "@/lib/i18n";
+import { ui } from "@/lib/ui-dict";
 import { Arrow, Button, Container, Kicker, Section, SectionHeading } from "@/components/public/ui";
 import { CallButton, ContactBand } from "@/components/public/cta";
 import { Journey } from "@/components/public/journey/journey";
 import { LeadForm } from "@/components/public/lead-form";
 import { CinematicHero } from "@/components/public/hero/cinematic-hero";
-import { landingPages } from "@/lib/landing";
+import { landingSlugs } from "@/lib/landing";
+
+/**
+ * Every section takes `locale` and reads its copy through `ui(locale)` and the
+ * `get*(locale)` content accessors. Nothing on this page holds a hardcoded
+ * Romanian string any more: a page that renders half in one language is the
+ * failure ADR-011 forbids, and threading the locale is what makes it a compile
+ * error rather than a thing someone notices in production.
+ */
 
 /* -------------------------------------------------------- Trust strip */
-function TrustStrip() {
+function TrustStrip({ locale }: { locale: Locale }) {
   // Renders nothing until the owner supplies figures he can evidence.
-  if (trustFacts.length === 0) return null;
+  const facts = getTrustFacts(locale);
+  if (facts.length === 0) return null;
   return (
     <section className="joint-rule bg-canvas-raised">
       <Container className="py-10">
         <ul className="grid grid-cols-2 gap-y-8 sm:grid-cols-4 sm:divide-x sm:divide-line">
-          {trustFacts.map((f) => (
+          {facts.map((f) => (
             <li key={f.label} className="sm:px-6">
               <p className="font-display tabular text-3xl font-semibold text-ink sm:text-4xl">{f.value}</p>
               <p className="mt-1 text-sm text-muted">{f.label}</p>
@@ -41,13 +52,15 @@ function TrustStrip() {
 
 /* ----------------------------------------------------------- Services */
 function Services({ locale }: { locale: Locale }) {
+  const t = ui(locale);
+  const services = getServices(locale);
   return (
     <Section id="servicii" tone="canvas" divide>
       <Container>
         <SectionHeading
-          kicker="Ce executăm"
-          title="Servicii de montaj gresie, faianță și renovări de baie"
-          intro="Lucrăm pe câteva direcții clare, fiecare cu standardul ei de pregătire, montaj și verificare."
+          kicker={t.home.servicesKicker}
+          title={t.home.servicesTitle}
+          intro={t.home.servicesIntro}
         />
         <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2">
           {services.map((s, i) => (
@@ -80,21 +93,19 @@ function Services({ locale }: { locale: Locale }) {
                 ))}
               </ul>
               <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-bronze-deep">
-                Detalii și etape <Arrow />
+                {t.cta.detailsAndSteps} <Arrow />
               </span>
             </Link>
           ))}
         </div>
 
         <div className="mt-14 border-t border-line pt-8">
-          <p className="text-base text-ink-soft">
-            Fiecare lucrare are pagina ei, cu ordinea reală de execuție și greșelile de evitat.
-          </p>
+          <p className="text-base text-ink-soft">{t.home.servicesOutro}</p>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button href={`/${locale}/servicii`} variant="secondary">
-              Vezi toate cele {landingPages.length} lucrări <Arrow />
+              {t.cta.seeAllWorks(landingSlugs.length)} <Arrow />
             </Button>
-            <CallButton variant="bronze" />
+            <CallButton locale={locale} variant="bronze" />
           </div>
         </div>
       </Container>
@@ -103,7 +114,9 @@ function Services({ locale }: { locale: Locale }) {
 }
 
 /* ----------------------------------------------------------- Flagship */
-function Flagship() {
+function Flagship({ locale }: { locale: Locale }) {
+  const t = ui(locale);
+  const flagship = getFlagship(locale);
   return (
     <Section id="despre" tone="surface" divide>
       <Container>
@@ -131,31 +144,35 @@ function Flagship() {
 
             <dl className="mt-7 space-y-4 border-l border-line-strong pl-5">
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-bronze-deep">Provocare</dt>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-bronze-deep">
+                  {t.home.flagshipChallenge}
+                </dt>
                 <dd className="mt-1 text-sm text-ink-soft">{flagship.challenge}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-bronze-deep">Abordare</dt>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-bronze-deep">
+                  {t.home.flagshipApproach}
+                </dt>
                 <dd className="mt-1 text-sm text-ink-soft">{flagship.approach}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-bronze-deep">Rezultat</dt>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-bronze-deep">
+                  {t.home.flagshipResult}
+                </dt>
                 <dd className="mt-1 text-sm text-ink-soft">{flagship.result}</dd>
               </div>
             </dl>
 
-            {/* Data-gated like trustFacts (D-011): a metric whose value is a
-                placeholder renders nothing rather than an em-dash under a label. */}
-            {flagship.metrics.some((m) => m.value && m.value !== "—") ? (
+            {/* Data-gated like trustFacts (D-011): the array is empty until the
+                owner supplies figures he can evidence, so nothing renders. */}
+            {flagship.metrics.length > 0 ? (
               <ul className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
-                {flagship.metrics
-                  .filter((m) => m.value && m.value !== "—")
-                  .map((m) => (
-                    <li key={m.label}>
-                      <p className="font-display tabular text-2xl font-semibold text-ink">{m.value}</p>
-                      <p className="text-xs text-muted">{m.label}</p>
-                    </li>
-                  ))}
+                {flagship.metrics.map((m) => (
+                  <li key={m.label}>
+                    <p className="font-display tabular text-2xl font-semibold text-ink">{m.value}</p>
+                    <p className="text-xs text-muted">{m.label}</p>
+                  </li>
+                ))}
               </ul>
             ) : null}
           </div>
@@ -166,19 +183,20 @@ function Flagship() {
 }
 
 /* ----------------------------------------------------- Precision proof */
-function PrecisionProof() {
+function PrecisionProof({ locale }: { locale: Locale }) {
+  const t = ui(locale);
   return (
     <Section tone="ink" className="relative overflow-hidden">
       <div className="tile-grid tile-grid-fade pointer-events-none absolute inset-0 opacity-[0.07]" aria-hidden="true" />
       <Container className="relative">
         <SectionHeading
-          kicker="Standardul nostru"
-          title="Precizia se vede în detalii"
-          intro="Diferența dintre o lucrare bună și una premium stă în pregătire, aliniere și racorduri."
+          kicker={t.home.precisionKicker}
+          title={t.home.precisionTitle}
+          intro={t.home.precisionIntro}
           tone="light"
         />
         <div className="mt-14 grid gap-x-10 gap-y-10 sm:grid-cols-2">
-          {precisionPoints.map((p, i) => (
+          {getPrecisionPoints(locale).map((p, i) => (
             <div key={p.title} className="border-t border-canvas/15 pt-5">
               <span className="font-display text-sm text-bronze-light">0{i + 1}</span>
               <h3 className="mt-2 text-display-3 text-canvas">{p.title}</h3>
@@ -192,17 +210,18 @@ function PrecisionProof() {
 }
 
 /* ------------------------------------------------------------ Process */
-function Process() {
+function Process({ locale }: { locale: Locale }) {
+  const t = ui(locale);
   return (
     <Section id="proces" tone="canvas" divide>
       <Container>
         <SectionHeading
-          kicker="Cum lucrăm"
-          title="Un proces predictibil, de la cerere la garanție"
-          intro="Știi în fiecare etapă ce urmează, ce decizi și ce livrăm."
+          kicker={t.home.processKicker}
+          title={t.home.processTitle}
+          intro={t.home.processIntro}
         />
         <ol className="mt-14 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {processSteps.map((step) => (
+          {getProcessSteps(locale).map((step) => (
             <li key={step.index} className="border-t border-line pt-5">
               <span className="font-display text-2xl font-semibold text-bronze-deep">{step.index}</span>
               <h3 className="mt-2 text-display-3 text-ink">{step.title}</h3>
@@ -216,7 +235,9 @@ function Process() {
 }
 
 /* --------------------------------------------------- Estimator teaser */
-function EstimatorTeaser() {
+function EstimatorTeaser({ locale }: { locale: Locale }) {
+  const t = ui(locale);
+  const estimator = getEstimator(locale);
   return (
     <Section id="preturi" tone="surface" divide>
       <Container>
@@ -226,8 +247,8 @@ function EstimatorTeaser() {
             <h2 className="mt-5 text-display-2 text-ink">{estimator.title}</h2>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-ink-soft">{estimator.body}</p>
             <div className="mt-8">
-              <Button href={estimator.cta.href} variant="primary">
-                {estimator.cta.label} <Arrow />
+              <Button href={estimatorCtaHref} variant="primary">
+                {estimator.ctaLabel} <Arrow />
               </Button>
             </div>
             <p className="mt-4 text-xs text-muted">{estimator.note}</p>
@@ -235,7 +256,7 @@ function EstimatorTeaser() {
 
           <ul className="rounded-sm border border-line-strong bg-canvas-raised p-6 sm:p-8">
             <li className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-bronze-deep">
-              Factori de cost
+              {t.home.costFactors}
             </li>
             {estimator.factors.map((f) => (
               <li key={f} className="flex items-center gap-3 border-t border-line py-3 text-sm text-ink-soft first:border-0">
@@ -251,7 +272,9 @@ function EstimatorTeaser() {
 }
 
 /* ---------------------------------------------------------- Portfolio */
-function Portfolio() {
+function Portfolio({ locale }: { locale: Locale }) {
+  const t = ui(locale);
+  const portfolio = getPortfolio(locale);
   const featured = portfolio.find((p) => p.featured);
   const gallery = portfolio.filter((p) => !p.featured);
 
@@ -259,9 +282,9 @@ function Portfolio() {
     <Section id="proiecte" tone="canvas" divide>
       <Container>
         <SectionHeading
-          kicker="Portofoliu"
-          title="Lucrări executate în Chișinău"
-          intro="Proiecte fotografiate la fața locului — de la pregătire și hidroizolație până la finisaj."
+          kicker={t.home.portfolioKicker}
+          title={t.home.portfolioTitle}
+          intro={t.home.portfolioIntro}
         />
 
         {/* Featured before/after — the strongest proof story, accessible side-by-side. */}
@@ -278,7 +301,7 @@ function Portfolio() {
                   className="object-cover"
                 />
                 <figcaption className="absolute left-4 top-4 rounded-xs bg-ink/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-canvas">
-                  Înainte
+                  {t.home.before}
                 </figcaption>
               </figure>
               <figure className="relative aspect-[3/4] border-t border-line sm:border-l sm:border-t-0">
@@ -291,20 +314,20 @@ function Portfolio() {
                   className="object-cover"
                 />
                 <figcaption className="absolute left-4 top-4 rounded-xs bg-bronze px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-canvas-raised">
-                  După
+                  {t.home.after}
                 </figcaption>
               </figure>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line p-6 sm:p-7">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-bronze-deep">
-                  {featured.category} · Înainte → După
+                  {featured.category} · {t.home.beforeAfter}
                 </span>
                 <h3 className="mt-1 text-display-3 text-ink">{featured.title}</h3>
                 <p className="mt-1 text-sm text-muted">{featured.type}</p>
               </div>
               <Button href="#contact" variant="primary">
-                Cere un proiect similar <Arrow />
+                {t.home.similarProject} <Arrow />
               </Button>
             </div>
           </article>
@@ -343,16 +366,18 @@ function Portfolio() {
 }
 
 /* ------------------------------------------------------------ Reviews */
-function Reviews() {
+function Reviews({ locale }: { locale: Locale }) {
+  const t = ui(locale);
+  const reviews = getReviews(locale);
   // No reviews until they are real, sourced and consented (DECISIONS D-007).
   if (reviews.length === 0) return null;
   return (
     <Section tone="surface" divide>
       <Container>
         <SectionHeading
-          kicker="Recenzii"
-          title="Ce spun clienții"
-          intro="Publicăm recenzii doar cu sursă și consimțământ — fără texte inventate."
+          kicker={t.home.reviewsKicker}
+          title={t.home.reviewsTitle}
+          intro={t.home.reviewsIntro}
         />
         <div className="mt-12 grid gap-6 md:grid-cols-2">
           {reviews.map((r, i) => (
@@ -374,12 +399,14 @@ function Reviews() {
 }
 
 /* ---------------------------------------------------------------- FAQ */
-function Faq() {
+function Faq({ locale }: { locale: Locale }) {
+  const t = ui(locale);
+  const faqs = getFaqs(locale);
   if (faqs.length === 0) return null;
   return (
     <Section tone="canvas" divide>
       <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
-        <SectionHeading kicker="Întrebări frecvente" title="Răspunsuri la ce ne întreabă clienții" />
+        <SectionHeading kicker={t.home.faqKicker} title={t.home.faqTitle} />
         <div className="divide-y divide-line border-t border-line">
           {faqs.map((f) => (
             <details key={f.q} className="group py-4">
@@ -399,45 +426,37 @@ function Faq() {
 }
 
 /* ----------------------------------------------------------- Final CTA */
-// This is the ONLY conversion endpoint on the site. Every CTA above anchors to
-// #contact, so if this section does not accept a request, nothing on the page does.
+// The conversion endpoint on this page. Every CTA above anchors to #contact, so
+// if this section does not accept a request, nothing on the page does.
 function FinalCta({ locale }: { locale: Locale }) {
+  const t = ui(locale);
   return (
     <section id="contact" className="relative overflow-hidden bg-ink text-canvas">
       <div className="tile-grid tile-grid-fade pointer-events-none absolute inset-0 opacity-[0.06]" aria-hidden="true" />
       <Container className="relative py-20 sm:py-28">
         <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
           <div>
-            <Kicker>Contact</Kicker>
-            <h2 className="mt-5 text-display-2 text-canvas">
-              Spune-ne despre spațiul tău
-            </h2>
-            <p className="mt-5 text-base leading-relaxed text-canvas/75">
-              Scrie-ne ce ai de placat sau de renovat. Revenim cu pașii următori și cu ce ne
-              trebuie ca să putem estima corect.
-            </p>
+            <Kicker>{t.home.contactKicker}</Kicker>
+            <h2 className="mt-5 text-display-2 text-canvas">{t.home.contactTitle}</h2>
+            <p className="mt-5 text-base leading-relaxed text-canvas/75">{t.home.contactIntro}</p>
 
             <ul className="mt-8 space-y-3 text-sm text-canvas/70">
-              <li className="flex gap-3">
-                <span aria-hidden="true" className="font-display text-bronze-light">01</span>
-                Ne spui serviciul și, dacă poți, suprafața aproximativă.
-              </li>
-              <li className="flex gap-3">
-                <span aria-hidden="true" className="font-display text-bronze-light">02</span>
-                Te sunăm ca să clarificăm detaliile și starea suportului.
-              </li>
-              <li className="flex gap-3">
-                <span aria-hidden="true" className="font-display text-bronze-light">03</span>
-                Programăm o evaluare la fața locului atunci când este necesar.
-              </li>
+              {[t.home.contactStep1, t.home.contactStep2, t.home.contactStep3].map((step, i) => (
+                <li key={step} className="flex gap-3">
+                  <span aria-hidden="true" className="font-display text-bronze-light">
+                    0{i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
             </ul>
 
             <div className="mt-8 border-t border-canvas/15 pt-6">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-canvas/50">
-                Sau direct la telefon
+                {t.cta.orByPhone}
               </p>
               <div className="mt-3">
-                <CallButton variant="ghost-light" />
+                <CallButton locale={locale} variant="ghost-light" />
               </div>
             </div>
           </div>
@@ -452,27 +471,24 @@ function FinalCta({ locale }: { locale: Locale }) {
 }
 
 export function HomeSections({ locale }: { locale: Locale }) {
+  const t = ui(locale);
   return (
     <>
       <CinematicHero locale={locale} />
-      <TrustStrip />
+      <TrustStrip locale={locale} />
       <Services locale={locale} />
-      <Flagship />
-      <Journey />
-      <PrecisionProof />
-      <Process />
+      <Flagship locale={locale} />
+      <Journey locale={locale} />
+      <PrecisionProof locale={locale} />
+      <Process locale={locale} />
       {/* The first ask, at the halfway point. Everything above is proof; the
           bottom form is four screens away on a phone, and a visitor convinced
           here should not have to scroll past six sections to act. */}
-      <ContactBand
-        locale={locale}
-        title="Ai o baie sau o suprafață de placat?"
-        body="Sună și spune-ne în două fraze despre ce e vorba, sau completează formularul. Îți spunem ce implică și de ce informații mai avem nevoie."
-      />
-      <EstimatorTeaser />
-      <Portfolio />
-      <Reviews />
-      <Faq />
+      <ContactBand locale={locale} title={t.home.bandTitle} body={t.home.bandBody} />
+      <EstimatorTeaser locale={locale} />
+      <Portfolio locale={locale} />
+      <Reviews locale={locale} />
+      <Faq locale={locale} />
       <FinalCta locale={locale} />
     </>
   );

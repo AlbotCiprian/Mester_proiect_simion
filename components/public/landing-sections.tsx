@@ -3,6 +3,7 @@ import Link from "next/link";
 import { photo } from "@/lib/landing-photos";
 import { findLandingPage, type LandingPage } from "@/lib/landing";
 import type { Locale } from "@/lib/i18n";
+import { ui } from "@/lib/ui-dict";
 import { Arrow, Button, Container, Kicker, Section, SectionHeading } from "@/components/public/ui";
 import { CallButton, ContactBand } from "@/components/public/cta";
 import { LeadForm } from "@/components/public/lead-form";
@@ -20,24 +21,21 @@ import { LeadForm } from "@/components/public/lead-form";
  * a convinced reader never has to navigate to convert.
  */
 export function LandingSections({ page, locale }: { page: LandingPage; locale: Locale }) {
+  const t = ui(locale);
   const related = page.related
-    .map((slug) => findLandingPage(slug))
+    .map((slug) => findLandingPage(locale, slug))
     .filter((item): item is LandingPage => Boolean(item));
 
   return (
     <>
       <LandingHero page={page} locale={locale} />
-      <Scope page={page} />
-      <Gallery page={page} />
-      <ContactBand
-        locale={locale}
-        title="Spune-ne ce ai de făcut"
-        body="Un telefon de două minute sau câteva rânduri în formular sunt de ajuns ca să știm dacă și cum putem ajuta."
-      />
-      <Execution page={page} />
-      <Pitfalls page={page} />
-      {page.costFactors ? <CostFactors page={page} /> : null}
-      <Faq page={page} />
+      <Scope page={page} locale={locale} />
+      <Gallery page={page} locale={locale} />
+      <ContactBand locale={locale} title={t.landing.bandTitle} body={t.landing.bandBody} />
+      <Execution page={page} locale={locale} />
+      <Pitfalls page={page} locale={locale} />
+      {page.costFactors ? <CostFactors page={page} locale={locale} /> : null}
+      <Faq page={page} locale={locale} />
       {related.length > 0 ? <Related items={related} locale={locale} /> : null}
       <LandingContact page={page} locale={locale} />
     </>
@@ -59,9 +57,9 @@ function LandingHero({ page, locale }: { page: LandingPage; locale: Locale }) {
         <h1 className="mt-4 max-w-3xl text-display-1 text-canvas">{page.h1}</h1>
         {lead ? <p className="mt-6 max-w-2xl text-lead text-canvas/85">{lead}</p> : null}
         <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <CallButton variant="bronze" />
+          <CallButton locale={locale} variant="bronze" />
           <Button href="#contact" variant="ghost-light">
-            Cere o estimare <Arrow />
+            {ui(locale).cta.estimate} <Arrow />
           </Button>
         </div>
       </Container>
@@ -70,18 +68,19 @@ function LandingHero({ page, locale }: { page: LandingPage; locale: Locale }) {
 }
 
 function Breadcrumb({ locale, current }: { locale: Locale; current: string }) {
+  const t = ui(locale);
   return (
-    <nav aria-label="Breadcrumb" className="text-xs text-canvas/60">
+    <nav aria-label={t.nav.ariaBreadcrumb} className="text-xs text-canvas/60">
       <ol className="flex flex-wrap items-center gap-2">
         <li>
           <Link href={`/${locale}`} className="transition-colors hover:text-canvas">
-            Acasă
+            {t.nav.home}
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
           <Link href={`/${locale}/servicii`} className="transition-colors hover:text-canvas">
-            Servicii
+            {t.nav.services}
           </Link>
         </li>
         <li aria-hidden="true">/</li>
@@ -96,7 +95,8 @@ function Breadcrumb({ locale, current }: { locale: Locale; current: string }) {
 }
 
 /* -------------------------------------------------- Intro + what it covers */
-function Scope({ page }: { page: LandingPage }) {
+function Scope({ page, locale }: { page: LandingPage; locale: Locale }) {
+  const t = ui(locale);
   const rest = page.intro.slice(1);
   return (
     <Section tone="canvas" divide>
@@ -111,7 +111,7 @@ function Scope({ page }: { page: LandingPage }) {
           </div>
           <div className="rounded-sm border border-line-strong bg-canvas-raised p-6 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bronze-deep">
-              Ce include lucrarea
+              {t.landing.scopeTitle}
             </p>
             <ul className="mt-5 space-y-3">
               {page.includes.map((item) => (
@@ -132,15 +132,16 @@ function Scope({ page }: { page: LandingPage }) {
 }
 
 /* ------------------------------------------------------------- Gallery */
-function Gallery({ page }: { page: LandingPage }) {
+function Gallery({ page, locale }: { page: LandingPage; locale: Locale }) {
+  const t = ui(locale);
   if (page.gallery.length === 0) return null;
   return (
     <Section tone="surface" divide>
       <Container>
         <SectionHeading
-          kicker="Din lucrări executate"
-          title="Fotografii de la fața locului"
-          intro="Inclusiv etapele de proces — partea care spune ceva despre execuție, nu doar despre rezultat."
+          kicker={t.landing.galleryKicker}
+          title={t.landing.galleryTitle}
+          intro={t.landing.galleryIntro}
         />
         <ul className="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-3">
           {page.gallery.map((key) => {
@@ -170,14 +171,15 @@ function Gallery({ page }: { page: LandingPage }) {
 }
 
 /* ----------------------------------------------------------- Execution */
-function Execution({ page }: { page: LandingPage }) {
+function Execution({ page, locale }: { page: LandingPage; locale: Locale }) {
+  const t = ui(locale);
   return (
     <Section tone="canvas" divide>
       <Container>
         <SectionHeading
-          kicker="Cum executăm"
-          title="Ordinea în care se face, și de ce contează"
-          intro="Fiecare etapă închide definitiv o decizie. De aceea ordinea nu este o preferință."
+          kicker={t.landing.stepsKicker}
+          title={t.landing.stepsTitle}
+          intro={t.landing.stepsIntro}
         />
         <ol className="mt-14 grid gap-x-10 gap-y-10 sm:grid-cols-2">
           {page.steps.map((step, index) => (
@@ -196,7 +198,8 @@ function Execution({ page }: { page: LandingPage }) {
 }
 
 /* ------------------------------------------------------------ Pitfalls */
-function Pitfalls({ page }: { page: LandingPage }) {
+function Pitfalls({ page, locale }: { page: LandingPage; locale: Locale }) {
+  const t = ui(locale);
   return (
     <Section tone="ink" className="relative overflow-hidden">
       <div
@@ -205,9 +208,9 @@ function Pitfalls({ page }: { page: LandingPage }) {
       />
       <Container className="relative">
         <SectionHeading
-          kicker="De evitat"
-          title="Greșelile care se plătesc mai târziu"
-          intro="Toate se văd după ani, nu la predare. De aceea le scriem aici, unde le poți folosi și dacă lucrarea o face altcineva."
+          kicker={t.landing.pitfallsKicker}
+          title={t.landing.pitfallsTitle}
+          intro={t.landing.pitfallsIntro}
           tone="light"
         />
         <div className="mt-14 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
@@ -224,24 +227,20 @@ function Pitfalls({ page }: { page: LandingPage }) {
 }
 
 /* --------------------------------------------------------- Cost factors */
-function CostFactors({ page }: { page: LandingPage }) {
+function CostFactors({ page, locale }: { page: LandingPage; locale: Locale }) {
+  const t = ui(locale);
   if (!page.costFactors) return null;
   return (
     <Section tone="surface" divide>
       <Container>
         <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
           <div>
-            <Kicker>Ce influențează costul</Kicker>
-            <h2 className="mt-5 text-display-2 text-ink">
-              Ce trebuie să știm ca să dăm un număr
-            </h2>
+            <Kicker>{t.landing.costKicker}</Kicker>
+            <h2 className="mt-5 text-display-2 text-ink">{t.landing.costTitle}</h2>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-ink-soft">
-              Nu publicăm un preț pe metru pătrat, pentru că un preț dat fără să fi văzut lucrarea
-              se schimbă la prima vizită. Mai jos este exact ce cântărește, în ordinea impactului.
+              {t.landing.costIntro}
             </p>
-            <p className="mt-4 text-xs text-muted">
-              Estimarea nu este o ofertă contractuală (ADR-012).
-            </p>
+            <p className="mt-4 text-xs text-muted">{t.landing.costNote}</p>
           </div>
           <ul className="rounded-sm border border-line-strong bg-canvas-raised p-6 sm:p-8">
             {page.costFactors.map((factor) => (
@@ -263,12 +262,13 @@ function CostFactors({ page }: { page: LandingPage }) {
 }
 
 /* ----------------------------------------------------------------- FAQ */
-function Faq({ page }: { page: LandingPage }) {
+function Faq({ page, locale }: { page: LandingPage; locale: Locale }) {
+  const t = ui(locale);
   if (page.faqs.length === 0) return null;
   return (
     <Section tone="canvas" divide>
       <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
-        <SectionHeading kicker="Întrebări frecvente" title="Ce ne întreabă oamenii" />
+        <SectionHeading kicker={t.landing.faqKicker} title={t.landing.faqTitle} />
         <div className="divide-y divide-line border-t border-line">
           {page.faqs.map((faq) => (
             <details key={faq.q} className="group py-4">
@@ -292,10 +292,11 @@ function Faq({ page }: { page: LandingPage }) {
 
 /* ------------------------------------------------------------- Related */
 function Related({ items, locale }: { items: LandingPage[]; locale: Locale }) {
+  const t = ui(locale);
   return (
     <Section tone="surface" divide>
       <Container>
-        <SectionHeading kicker="Continuă" title="Lucrări legate de aceasta" />
+        <SectionHeading kicker={t.landing.relatedKicker} title={t.landing.relatedTitle} />
         <ul className="mt-10 grid gap-4 sm:grid-cols-3">
           {items.map((item) => (
             <li key={item.slug}>
@@ -307,7 +308,7 @@ function Related({ items, locale }: { items: LandingPage[]; locale: Locale }) {
                   {item.h1}
                 </span>
                 <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-bronze-deep">
-                  Vezi pagina <Arrow />
+                  {t.cta.openPage} <Arrow />
                 </span>
               </Link>
             </li>
@@ -322,6 +323,7 @@ function Related({ items, locale }: { items: LandingPage[]; locale: Locale }) {
 // The conversion endpoint for THIS page. Same id as the homepage section, so
 // every "#contact" on the site resolves without leaving the current route.
 function LandingContact({ page, locale }: { page: LandingPage; locale: Locale }) {
+  const t = ui(locale);
   return (
     <section id="contact" className="relative overflow-hidden bg-ink text-canvas">
       <div
@@ -331,18 +333,17 @@ function LandingContact({ page, locale }: { page: LandingPage; locale: Locale })
       <Container className="relative py-20 sm:py-24">
         <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
           <div>
-            <Kicker tone="light">Contact</Kicker>
-            <h2 className="mt-5 text-display-2 text-canvas">Cere o estimare</h2>
+            <Kicker tone="light">{t.nav.contact}</Kicker>
+            <h2 className="mt-5 text-display-2 text-canvas">{t.landing.contactTitle}</h2>
             <p className="mt-5 text-base leading-relaxed text-canvas/75">
-              Scrie-ne câteva rânduri despre lucrare — {page.h1.toLowerCase()} sau orice altceva
-              din aceeași zonă. Revenim cu pașii următori și cu ce ne trebuie ca să estimăm corect.
+              {t.landing.contactIntro(page.h1.toLowerCase())}
             </p>
             <div className="mt-8 border-t border-canvas/15 pt-6">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-canvas/50">
-                Sau direct la telefon
+                {t.cta.orByPhone}
               </p>
               <div className="mt-3">
-                <CallButton variant="ghost-light" />
+                <CallButton locale={locale} variant="ghost-light" />
               </div>
             </div>
           </div>

@@ -9,7 +9,7 @@ import {
   normalizePhone,
 } from "@/lib/lead";
 import { PREFERENCE_CHANNEL } from "@/lib/lead-labels";
-import { channels, services } from "@/lib/content";
+import { channels, getServices } from "@/lib/content";
 
 const validLead = {
   name: "Ion Popescu",
@@ -126,7 +126,7 @@ describe("service catalogue", () => {
   it("stays in step with lib/content.ts", () => {
     // leadServiceSlugs is an explicit tuple for type-safety, so it can drift
     // from the rendered service grid. This is the guard.
-    const contentSlugs = services.map((s) => s.slug).sort();
+    const contentSlugs = getServices("ro").map((s) => s.slug).sort();
     const formSlugs = leadServiceSlugs.filter((s) => s !== "altceva").sort();
     assert.deepEqual(formSlugs, contentSlugs);
   });

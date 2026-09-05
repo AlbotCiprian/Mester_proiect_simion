@@ -36,7 +36,7 @@ type Params = Promise<{ locale: string; slug: string }>;
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale, slug } = await params;
   if (!isLocale(locale)) return {};
-  const page = findLandingPage(slug);
+  const page = findLandingPage(locale, slug);
   if (!page) return {};
 
   const path = `/servicii/${page.slug}`;
@@ -74,7 +74,7 @@ export default async function LandingRoute({ params }: { params: Params }) {
   // Romanian copy under /ru (ADR-011: no partial translation).
   if (!publishedLocales.includes(locale)) notFound();
 
-  const page = findLandingPage(slug);
+  const page = findLandingPage(locale, slug);
   if (!page) notFound();
 
   const path = `/servicii/${page.slug}`;

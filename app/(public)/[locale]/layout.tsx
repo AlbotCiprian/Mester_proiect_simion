@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { isLocale, locales, type Locale } from "@/lib/i18n";
+import { ui } from "@/lib/ui-dict";
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
 import { StickyContactBar } from "@/components/public/sticky-contact-bar";
@@ -27,7 +28,7 @@ export default async function PublicLayout({
         href="#main"
         className="sr-only-field focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:h-auto focus:w-auto focus:rounded-xs focus:bg-ink focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-canvas"
       >
-        Sari la conținut
+        {ui(locale as Locale).nav.skipToContent}
       </a>
 
       {/* Fixed top stack so the cinematic hero can sit full-bleed behind a
@@ -40,7 +41,7 @@ export default async function PublicLayout({
         {children}
       </main>
       <SiteFooter locale={locale as Locale} />
-      <StickyContactBar />
+      <StickyContactBar locale={locale as Locale} />
       {/* Spacer so the mobile sticky bar never covers footer content. */}
       <div aria-hidden="true" className="h-16 bg-ink lg:hidden" />
     </>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { defaultLocale } from "@/lib/i18n";
-import { site } from "@/lib/content";
+import { getSiteText, site } from "@/lib/content";
 import { SITE_URL, robotsMeta } from "@/lib/seo";
 
 // Self-hosted at build time by next/font. Architectural editorial serif +
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   // Derived from lib/content.ts so renaming the business is a one-file edit.
   title: {
-    default: `${site.name} — ${site.tagline}`,
+    default: `${site.name} — ${getSiteText(defaultLocale).tagline}`,
     template: `%s · ${site.name}`,
   },
   description:

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { phone, services, site } from "@/lib/content";
+import { getServices, getSiteText, phone, site } from "@/lib/content";
 import { absoluteUrl, canonicalFor } from "@/lib/seo";
 import type { Locale } from "@/lib/i18n";
 
@@ -56,13 +56,18 @@ function compact(input: Json): Json {
  * The organisation. `name` is confirmed (SemiDom, D-018) and so is `telephone`.
  * Everything else waits for owner confirmation and is absent until then.
  */
-// Locale-independent: the organisation is one entity across every language.
-export function organizationSchema(): Json {
+/**
+ * ONE organisation across every language, but its DESCRIPTION is per-locale —
+ * a Russian page whose Organization node describes the business in Romanian is
+ * exactly the mixed-language signal ADR-011 exists to prevent. The @id stays
+ * root-scoped so both locales point at the same entity.
+ */
+export function organizationSchema(locale: Locale): Json {
   return compact({
     "@type": "Organization",
     "@id": `${absoluteUrl("/")}#organization`,
     name: site.name,
-    description: site.descriptor,
+    description: getSiteText(locale).descriptor,
     // Root-scoped, matching the @id. A locale-scoped url on a root-scoped @id
     // means both locales emit the same node with a different url.
     url: absoluteUrl("/"),
@@ -113,8 +118,8 @@ export function servicesItemListSchema(locale: Locale): Json {
   return compact({
     "@type": "ItemList",
     "@id": `${canonicalFor(locale)}#services`,
-    name: "Servicii",
-    itemListElement: services.map((service, index) => ({
+    name: getSiteText(locale).descriptor,
+    itemListElement: getServices(locale).map((service, index) => ({
       "@type": "ListItem",
       position: index + 1,
       name: service.title,
@@ -147,7 +152,7 @@ export function serviceSchema(
     description: opts.description,
     serviceType: opts.name,
     provider: { "@id": `${absoluteUrl("/")}#organization` },
-    areaServed: site.serviceArea,
+    areaServed: getSiteText(locale).serviceArea,
     url: canonicalFor(locale, opts.path),
     // No offers, no priceRange, no aggregateRating. See the header block.
   });

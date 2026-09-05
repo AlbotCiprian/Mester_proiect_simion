@@ -79,3 +79,21 @@ export function robotsMeta(locale?: Locale) {
   if (!localeIsPublished) return { index: false, follow: false };
   return INDEXABLE ? undefined : { index: false, follow: false };
 }
+
+/**
+ * hreflang for a path, across every PUBLISHED locale, plus x-default.
+ *
+ * Driven off `publishedLocales` rather than `locales`: advertising a language
+ * that renders a 404 is worse than advertising none, and it is the mistake that
+ * hreflang tooling flags loudest.
+ *
+ * x-default points at Romanian. It must be a real, reachable page, and a
+ * Moldovan visitor whose preference we do not know is more likely to read
+ * Romanian than Russian.
+ */
+const HREFLANG: Record<Locale, string> = { ro: "ro-MD", ru: "ru-MD" };
+
+export function languageAlternates(path = ""): Record<string, string> {
+  const entries = publishedLocales.map((l) => [HREFLANG[l], canonicalFor(l, path)] as const);
+  return Object.fromEntries([...entries, ["x-default", canonicalFor(defaultLocale, path)]]);
+}

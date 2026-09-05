@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { publicChannels, nav, navHref, navPages, phone, site } from "@/lib/content";
+import { getSiteText, publicChannels, nav, navHref, navPages, phone, site } from "@/lib/content";
 import { defaultLocale, publishedLocales, type Locale } from "@/lib/i18n";
+import { ui } from "@/lib/ui-dict";
 import { Container } from "@/components/public/ui";
 import { PhoneGlyph } from "@/components/public/cta";
 
@@ -8,11 +9,13 @@ import { PhoneGlyph } from "@/components/public/cta";
 // cookies, and the privacy page now says so in its own section — a separate
 // page would only advertise a consent banner we do not need.
 // "Termeni" stays blocked on a decision the owner has not made.
-const legal = [{ label: "Confidențialitate", path: "/confidentialitate" }];
+const legal = [{ path: "/confidentialitate" }];
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const linkLocale = publishedLocales.includes(locale) ? locale : defaultLocale;
   const phoneChannel = publicChannels.find((c) => c.type === "phone");
+  const t = ui(locale);
+  const brandText = getSiteText(locale);
 
   return (
     <footer className="bg-ink text-canvas">
@@ -20,8 +23,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <div className="grid gap-12 md:grid-cols-[1.3fr_1fr_1fr]">
           <div>
             <p className="font-display text-2xl font-semibold">{site.name}</p>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-canvas/70">{site.tagline}.</p>
-            <p className="mt-4 text-sm text-canvas/55">{site.serviceArea}</p>
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-canvas/70">{brandText.tagline}.</p>
+            <p className="mt-4 text-sm text-canvas/55">{brandText.serviceArea}</p>
 
             {/* The number, large and first. It is the primary conversion action
                 and it was previously one line item in a list of links. */}
@@ -36,8 +39,10 @@ export function SiteFooter({ locale }: { locale: Locale }) {
             ) : null}
           </div>
 
-          <nav aria-label="Footer — pagini" className="text-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-canvas/50">Navigare</p>
+          <nav aria-label={t.nav.ariaFooterPages} className="text-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-canvas/50">
+              {t.nav.footerHeading}
+            </p>
             <ul className="mt-4 space-y-2.5">
               {navPages.map((item) => (
                 <li key={item.path}>
@@ -45,7 +50,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                     href={`/${linkLocale}${item.path}`}
                     className="font-medium text-canvas/90 transition-colors hover:text-canvas"
                   >
-                    {item.label}
+                    {t.nav[item.key]}
                   </Link>
                 </li>
               ))}
@@ -55,7 +60,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                     href={navHref(locale, item.hash)}
                     className="text-canvas/80 transition-colors hover:text-canvas"
                   >
-                    {item.label}
+                    {t.nav[item.key]}
                   </Link>
                 </li>
               ))}
@@ -63,7 +68,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           </nav>
 
           <div className="text-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-canvas/50">Contact</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-canvas/50">{t.nav.contact}</p>
             <ul className="mt-4 space-y-2.5">
               {publicChannels.map((c) => (
                 <li key={c.type}>
@@ -92,14 +97,14 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           </p>
           <ul className="flex flex-wrap gap-5">
             {legal.map((item) => (
-              <li key={item.label}>
+              <li key={item.path}>
                 {/* An unpublished locale has no legal pages, so the link must point
                     at one that does — otherwise /ru links to a 404. */}
                 <Link
                   href={`/${linkLocale}${item.path}`}
                   className="transition-colors hover:text-canvas"
                 >
-                  {item.label}
+                  {t.cta.privacyLink}
                 </Link>
               </li>
             ))}

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { phone, publicChannels } from "@/lib/content";
+import type { Locale } from "@/lib/i18n";
+import { ui } from "@/lib/ui-dict";
 import { Arrow, Button, Container } from "@/components/public/ui";
 
 /**
@@ -15,18 +17,30 @@ import { Arrow, Button, Container } from "@/components/public/ui";
 
 const hasPhone = publicChannels.some((c) => c.type === "phone");
 
-/** Big, unmistakable phone link. `tel:` works on desktop too — it opens the
- *  handoff dialog — so it is not hidden behind a breakpoint. */
+/**
+ * Big, unmistakable phone link. `tel:` works on desktop too — it opens the
+ * handoff dialog — so it is not hidden behind a breakpoint.
+ *
+ * The number itself is never translated; the surrounding label is, which is why
+ * this takes a locale even though it renders digits.
+ */
 export function CallButton({
+  locale,
   variant = "bronze",
   className = "",
 }: {
+  locale: Locale;
   variant?: "bronze" | "primary" | "ghost-light" | "secondary";
   className?: string;
 }) {
   if (!hasPhone) return null;
   return (
-    <Button href={`tel:${phone.e164}`} variant={variant} className={className}>
+    <Button
+      href={`tel:${phone.e164}`}
+      variant={variant}
+      className={`whitespace-nowrap ${className}`}
+      aria-label={ui(locale).cta.callAria(phone.display)}
+    >
       <PhoneGlyph />
       {phone.display}
     </Button>
@@ -65,10 +79,11 @@ export function ContactBand({
   title,
   body,
 }: {
-  locale: string;
+  locale: Locale;
   title: string;
   body: string;
 }) {
+  const t = ui(locale);
   return (
     <section className="joint-rule relative overflow-hidden bg-ink text-canvas">
       <div
@@ -82,21 +97,21 @@ export function ContactBand({
             <p className="mt-3 text-base leading-relaxed text-canvas/75">{body}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:shrink-0">
-            <CallButton variant="bronze" />
+            <CallButton locale={locale} variant="bronze" />
             {/* Bare hash: it resolves against the CURRENT page, so every route
                 that renders an id="contact" keeps the visitor where they are. */}
             <Button href="#contact" variant="ghost-light">
-              Cere o estimare <Arrow />
+              {t.cta.estimate} <Arrow />
             </Button>
           </div>
         </div>
         <p className="mt-6 text-xs text-canvas/50">
-          Fără obligații. Datele tale sunt folosite doar ca să îți răspundem — vezi{" "}
+          {t.cta.noObligation}{" "}
           <Link
             href={`/${locale}/confidentialitate`}
             className="underline underline-offset-4 hover:text-canvas"
           >
-            politica de confidențialitate
+            {t.cta.privacyLink}
           </Link>
           .
         </p>

@@ -90,7 +90,7 @@ export function CinematicHero({ locale }: { locale: Locale }) {
           <Button href={heroCta.primary} variant="bronze">
             {copy.primaryCta} <Arrow />
           </Button>
-          <CallButton variant="ghost-light" />
+          <CallButton locale={locale} variant="ghost-light" />
           <Button href={heroCta.secondary} variant="ghost-light" className="hidden sm:inline-flex">
             {copy.secondaryCta}
           </Button>

@@ -2,14 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isLocale, publishedLocales, type Locale } from "@/lib/i18n";
-import { canonicalFor, robotsMeta } from "@/lib/seo";
+import { canonicalFor, languageAlternates, robotsMeta } from "@/lib/seo";
 import { site } from "@/lib/content";
-import { landingPages } from "@/lib/landing";
-import {
-  breadcrumbSchema,
-  landingItemListSchema,
-  webPageSchema,
-} from "@/lib/schema";
+import { getLandingPages, landingSlugs } from "@/lib/landing";
+import { ui } from "@/lib/ui-dict";
+import { breadcrumbSchema, landingItemListSchema, webPageSchema } from "@/lib/schema";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Arrow, Container, Kicker, Section, SectionHeading } from "@/components/public/ui";
 import { CallButton, ContactBand } from "@/components/public/cta";
@@ -18,21 +15,21 @@ import { CallButton, ContactBand } from "@/components/public/cta";
  * The hub for the fifteen topic pages.
  *
  * It exists for two reasons and both matter. For a visitor it is the one screen
- * that shows the whole range without scrolling the homepage. For a crawler it
- * is the internal link that makes every topic page reachable in two clicks from
- * the root — a page that only the sitemap knows about gets crawled late and
- * ranked worse.
+ * that shows the whole range without scrolling the homepage. For a crawler it is
+ * the internal link that makes every topic page reachable in two clicks from the
+ * root — a page that only the sitemap knows about gets crawled late and ranked
+ * worse. That became the ONLY sitewide path to them when the footer list was
+ * removed, so this page is now load-bearing for crawlability.
  */
 
-const TITLE = "Servicii de montaj și renovare";
-const DESCRIPTION =
-  "Toate lucrările pe care le executăm, fiecare cu etapele reale de execuție, greșelile de evitat și fotografii de la fața locului.";
-
-/** Editorial grouping. Purely presentational — the source of truth is lib/landing.ts. */
-const GROUPS: Array<{ title: string; note: string; slugs: string[] }> = [
+/**
+ * Editorial grouping. Purely presentational: the slugs are the source of truth
+ * and the labels come from the dictionary, so a group cannot end up with a
+ * Romanian heading on a Russian page.
+ */
+const GROUPS = [
   {
-    title: "Baie",
-    note: "De la o placare simplă până la o renovare completă, coordonată de o singură echipă.",
+    key: "bathroom",
     slugs: [
       "renovare-baie-la-cheie",
       "reparatie-baie",
@@ -44,21 +41,20 @@ const GROUPS: Array<{ title: string; note: string; slugs: string[] }> = [
     ],
   },
   {
-    title: "Placare",
-    note: "Montajul propriu-zis, pe formatele și materialele cu care lucrăm.",
+    key: "tiling",
     slugs: ["montaj-gresie-faianta", "placi-format-mare", "teracota"],
   },
   {
-    title: "Exterior",
-    note: "Suprafețe expuse la îngheț, unde sistemul de montaj contează mai mult decât placa.",
+    key: "exterior",
     slugs: ["placare-terasa", "placare-scari-trepte", "placare-fatada"],
   },
   {
-    title: "Înainte să ceri o ofertă",
-    note: "Ce trebuie să știi ca să compari corect două oferte, inclusiv pe a noastră.",
+    key: "before",
     slugs: ["cat-costa-montajul-gresie-faianta", "mester-gresie-faianta-chisinau"],
   },
-];
+] as const;
+
+const OG_LOCALE: Record<Locale, string> = { ro: "ro_MD", ru: "ru_MD" };
 
 export async function generateMetadata({
   params,
@@ -67,19 +63,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
+  const t = ui(locale);
   const url = canonicalFor(locale, "/servicii");
   return {
-    title: { absolute: `${TITLE} · ${site.name}` },
-    description: DESCRIPTION,
-    alternates: { canonical: url },
+    title: { absolute: `${t.hub.title} · ${site.name}` },
+    description: t.hub.description,
+    alternates: { canonical: url, languages: languageAlternates("/servicii") },
     robots: robotsMeta(locale),
     openGraph: {
       type: "website",
       url,
       siteName: site.name,
-      title: TITLE,
-      description: DESCRIPTION,
-      locale: "ro_MD",
+      title: t.hub.title,
+      description: t.hub.description,
+      locale: OG_LOCALE[locale],
     },
   };
 }
@@ -89,16 +86,23 @@ export default async function ServicesHub({ params }: { params: Promise<{ locale
   if (!isLocale(locale)) notFound();
   if (!publishedLocales.includes(locale)) notFound();
 
+  const t = ui(locale);
+  const pages = getLandingPages(locale);
+
   return (
     <>
       <JsonLd
         nodes={[
           breadcrumbSchema(locale, [
-            { name: "Acasă", path: "" },
-            { name: "Servicii", path: "/servicii" },
+            { name: t.nav.home, path: "" },
+            { name: t.nav.services, path: "/servicii" },
           ]),
-          webPageSchema(locale, { path: "/servicii", title: TITLE, description: DESCRIPTION }),
-          landingItemListSchema(locale, landingPages),
+          webPageSchema(locale, {
+            path: "/servicii",
+            title: t.hub.title,
+            description: t.hub.description,
+          }),
+          landingItemListSchema(locale, pages),
         ]}
       />
 
@@ -108,26 +112,26 @@ export default async function ServicesHub({ params }: { params: Promise<{ locale
           aria-hidden="true"
         />
         <Container className="relative pb-16 pt-32 sm:pb-20 sm:pt-36">
-          <nav aria-label="Breadcrumb" className="text-xs text-canvas/60">
+          <nav aria-label={t.nav.ariaBreadcrumb} className="text-xs text-canvas/60">
             <ol className="flex flex-wrap items-center gap-2">
               <li>
                 <Link href={`/${locale}`} className="transition-colors hover:text-canvas">
-                  Acasă
+                  {t.nav.home}
                 </Link>
               </li>
               <li aria-hidden="true">/</li>
               <li>
                 <span aria-current="page" className="text-canvas/85">
-                  Servicii
+                  {t.nav.services}
                 </span>
               </li>
             </ol>
           </nav>
-          <Kicker tone="light">Ce executăm</Kicker>
-          <h1 className="mt-4 max-w-3xl text-display-1 text-canvas">{TITLE}</h1>
-          <p className="mt-6 max-w-2xl text-lead text-canvas/85">{DESCRIPTION}</p>
+          <Kicker tone="light">{t.hub.kicker}</Kicker>
+          <h1 className="mt-4 max-w-3xl text-display-1 text-canvas">{t.hub.title}</h1>
+          <p className="mt-6 max-w-2xl text-lead text-canvas/85">{t.hub.description}</p>
           <div className="mt-9">
-            <CallButton variant="bronze" />
+            <CallButton locale={locale} variant="bronze" />
           </div>
         </Container>
       </section>
@@ -135,20 +139,20 @@ export default async function ServicesHub({ params }: { params: Promise<{ locale
       <Section tone="canvas" divide>
         <Container>
           <SectionHeading
-            kicker={`${landingPages.length} pagini`}
-            title="Alege lucrarea care te interesează"
-            intro="Fiecare pagină descrie ordinea reală de execuție și ce se strică atunci când ordinea nu este respectată."
+            kicker={t.hub.pageCount(landingSlugs.length)}
+            title={t.hub.listTitle}
+            intro={t.hub.listIntro}
           />
           <div className="mt-14 space-y-14">
             {GROUPS.map((group) => (
-              <div key={group.title}>
+              <div key={group.key}>
                 <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line-strong pt-5">
-                  <h2 className="text-display-3 text-ink">{group.title}</h2>
-                  <p className="text-sm text-muted">{group.note}</p>
+                  <h2 className="text-display-3 text-ink">{t.hub.groups[group.key]}</h2>
+                  <p className="text-sm text-muted">{t.hub.groupNotes[group.key]}</p>
                 </div>
                 <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {group.slugs.map((slug) => {
-                    const page = landingPages.find((item) => item.slug === slug);
+                    const page = pages.find((item) => item.slug === slug);
                     if (!page) return null;
                     return (
                       <li key={slug}>
@@ -163,7 +167,7 @@ export default async function ServicesHub({ params }: { params: Promise<{ locale
                             {page.metaDescription}
                           </span>
                           <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-bronze-deep">
-                            Deschide <Arrow />
+                            {t.cta.openPage} <Arrow />
                           </span>
                         </Link>
                       </li>
@@ -184,24 +188,21 @@ export default async function ServicesHub({ params }: { params: Promise<{ locale
 // The hub carries the same id="contact" as every other route, so the header and
 // the mobile bar never navigate away from the page the visitor is reading.
 function HubContact({ locale }: { locale: Locale }) {
+  const t = ui(locale);
   return (
     <div id="contact">
-      <ContactBand
-        locale={locale}
-        title="Nu ești sigur în ce categorie intră lucrarea ta?"
-        body="Sună și spune-ne în două fraze ce ai de făcut, sau trimite formularul de pe pagina principală. Îți spunem noi ce implică."
-      />
+      <ContactBand locale={locale} title={t.hub.bandTitle} body={t.hub.bandBody} />
       <Section tone="canvas">
         <Container className="text-center">
           <p className="text-base text-ink-soft">
-            Formularul complet, cu toate câmpurile, este pe{" "}
+            {t.hub.formNote}{" "}
             <Link
               href={`/${locale}#contact`}
               className="font-medium text-bronze-deep underline underline-offset-4"
             >
-              pagina principală
-            </Link>{" "}
-            și pe fiecare pagină de serviciu.
+              {t.hub.formNoteLink}
+            </Link>
+            .
           </p>
         </Container>
       </Section>
